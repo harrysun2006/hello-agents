@@ -6,7 +6,8 @@ from typing import List, Dict
 
 # 加载 .env 文件中的环境变量，处理文件不存在异常
 try:
-    load_dotenv()
+    # load_dotenv()
+    load_dotenv(dotenv_path='.vscode/.env.local', override=True)
 except FileNotFoundError:
     print("警告：未找到 .env 文件，将使用系统环境变量。")
 except Exception as e:
@@ -19,6 +20,13 @@ except Exception as e:
 PLANNER_PROMPT_TEMPLATE = """
 你是一个顶级的AI规划专家。你的任务是将用户提出的复杂问题分解成一个由多个简单步骤组成的行动计划。
 请确保计划中的每个步骤都是一个独立的、可执行的子任务，并且严格按照逻辑顺序排列。
+
+⚠️ 非常重要：
+1. 你现在只负责「规划步骤」，**不要在计划中直接给出任何中间结果或最终结果的数值**。
+2. 也就是说，步骤中可以出现“计算周二的苹果销量为周一的两倍”，
+   但**不能写出“15 * 2 = 30”或“总共是 50 个苹果”这样的具体数字结果**。
+3. 每个步骤只描述“要做什么”，不要提前把算式算完。
+
 你的输出必须是一个Python列表，其中每个元素都是一个描述子任务的字符串。
 
 问题: {question}
@@ -38,12 +46,14 @@ class Planner:
         messages = [{"role": "user", "content": prompt}]
         
         print("--- 正在生成计划 ---")
-        response_text = self.llm_client.think(messages=messages) or ""
+        response_text = self.llm_client.think(messages=messages, temperature=0) or ""
         print(f"✅ 计划已生成:\n{response_text}")
         
         try:
             plan_str = response_text.split("```python")[1].split("```")[0].strip()
+            # print(f"解析计划字符串: {plan_str}")
             plan = ast.literal_eval(plan_str)
+            # print(f"解析结果: {plan}")
             return plan if isinstance(plan, list) else []
         except (ValueError, SyntaxError, IndexError) as e:
             print(f"❌ 解析计划时出错: {e}")
@@ -58,6 +68,12 @@ EXECUTOR_PROMPT_TEMPLATE = """
 你是一位顶级的AI执行专家。你的任务是严格按照给定的计划，一步步地解决问题。
 你将收到原始问题、完整的计划、以及到目前为止已经完成的步骤和结果。
 请你专注于解决“当前步骤”，并仅输出该步骤的最终答案，不要输出任何额外的解释或对话。
+
+⚠️ 输出格式要求：
+1. 只能使用**纯文本**回答。
+2. 不要使用任何 Markdown 语法（例如 `**`、`#`、``` ``` 等）。
+3. 不要使用任何 LaTeX 或数学公式标记（例如 `$...$`、`\\(\\)`、`\\[\\]` 等）。
+4. 直接用汉字和阿拉伯数字描述结果即可。
 
 # 原始问题:
 {question}

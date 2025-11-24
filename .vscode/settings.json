@@ -1,0 +1,78 @@
+{
+  "C_Cpp.errorSquiggles": "disabled",
+  "cmake.ignoreCMakeListsMissing": true,
+  "local-history.enabled": 0,
+  "local-history.daysLimit": 3,
+  "local-history.maxDisplay": 3,
+  "local-history.maxFileEntries": 3,
+  "local-history.maxSave": 3,
+  // 仅对 src/ 下的文件生效
+  "local-history.include": [
+    ".vscode/MEMO.TXT",
+    ".vscode/password.md"
+  ],
+  // 排除 node_modules、log、config 文件等
+  "local-history.exclude": [
+    "**/08.Other/**",
+    "**/0*/**",
+    "**/.vscode/settings.json",
+  ],
+  "java.autobuild.enabled": false,
+  "gradle.autoDetect": "off",
+  "editor.formatOnSave": false,
+  "python.linting.enabled": false,
+  "python.formatting.provider": "none",
+  "python.terminal.executeInFileDir": false,
+  "python.testing.enabled": false,
+  "python.defaultInterpreterPath": "${env:HOME}/micromamba/envs/v3.12/bin/python",
+  "python.interpreterPaths": [
+    "${env:HOME}/micromamba/envs/v3.12/bin/python",
+    "${env:HOME}/.pyenv/versions/3.9.13/bin/python"
+  ],
+  "jupyter.interpreterPaths": [
+    "${env:HOME}/micromamba/envs/v3.12/bin/python",
+    "${env:HOME}/.pyenv/versions/3.9.13/bin/python"
+  ],
+  "python.analysis.exclude": [
+    "/usr/bin/python*",
+    "/Applications/Xcode.app/**",
+    "/usr/local/**",
+    "/opt/homebrew/Caskroom/**",
+    "/opt/homebrew/bin/python*",
+  ],
+  "jupyter.kernels.excludeWorkspaceInterpreterKernels": true,
+  "jupyter.kernels.exclude": [
+    "*base*",
+    "/usr/bin/*",
+    "/usr/local/*",
+    "/Applications/Xcode.app/*",
+    "/opt/homebrew/*"
+  ],
+  "python.condaPath": "",
+  "python.condaInterpreter": "",
+  "python.condaAutoActivateBase": false,
+  "python.venvPaths": [],
+  "python.envFile": "",
+  "python.venvFolders": [],
+  "python.poetryPath": "",
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.enablePytestSupport": false,
+  "python.analysis.experimentalserver": false,
+  "python.experiments.enabled": false,
+  "python.testing.autoTestDiscoverOnSaveEnabled": false,
+  "python.testing.promptToConfigure": false,
+
+  "C_Cpp.enhancedColorization": "enabled",
+  "workbench.colorCustomizations": {
+    "editor.foreground": "#00cc00",
+    // "settings.textInputForeground": "#37373d"
+  },
+  "editor.tokenColorCustomizations": {
+    "[Default Dark Modern]": {
+      "comments": "#00ff00"
+    }
+  },
+  "workbench.colorTheme": "Dark",
+  "python.languageServer": "None",
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+}

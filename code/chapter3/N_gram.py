@@ -12,8 +12,11 @@ print(f"第一步: P(datawhale) = {count_datawhale}/{total_tokens} = {p_datawhal
 
 # --- 第二步：计算 P(agent|datawhale) ---
 # 先计算 bigrams 用于后续步骤
-bigrams = zip(tokens, tokens[1:])
+# 使用 list(zip(...)) 而不是 zip(...) , bigrams 会被保存为列表，而不会被迭代器耗尽
+bigrams = list(zip(tokens, tokens[1:]))
+# print(bigrams)
 bigram_counts = collections.Counter(bigrams)
+# print(bigram_counts)
 count_datawhale_agent = bigram_counts[('datawhale', 'agent')]
 # count_datawhale 已在第一步计算
 p_agent_given_datawhale = count_datawhale_agent / count_datawhale

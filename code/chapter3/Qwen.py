@@ -2,7 +2,11 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # 指定模型ID
-model_id = "Qwen/Qwen1.5-0.5B-Chat"
+# https://huggingface.co/Qwen/collections
+# model_id = "Qwen/Qwen1.5-0.5B-Chat" # ❌
+# model_id = "Qwen/Qwen3-Coder-30B-A3B-Instruct" # crash
+# model_id = "Qwen/Qwen2.5-Math-7B" # ✅️
+model_id = "Qwen/Qwen3-0.6B" # ✅️
 
 # 设置设备，优先使用GPU
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -17,9 +21,13 @@ model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
 print("模型和分词器加载完成！")
 
 # 准备对话输入
+# prompt = "你好，请介绍你自己。"
+# 正确的计算应该是（48+12）/（80+15）= 60/95=12/19≈0.6316，也就是约63.16%
+prompt = "一个篮球队在一个赛季的80场比赛中赢了60%。在接下来的赛季中，他们打了15场比赛，赢了12场。两个赛季的总胜率是多少？"
+# prompt = "一个篮球队在一个赛季的80场比赛中赢了60%。在接下来的赛季中，他们打了15场比赛，赢了12场。两个赛季的总胜率是多少？请逐步思考解答。"
 messages = [
     {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "你好，请介绍你自己。"}
+    {"role": "user", "content": prompt}
 ]
 
 # 使用分词器的模板格式化输入
@@ -39,7 +47,7 @@ print(model_inputs)
 # max_new_tokens 控制了模型最多能生成多少个新的Token
 generated_ids = model.generate(
     model_inputs.input_ids,
-    max_new_tokens=512
+    max_new_tokens=8192
 )
 
 # 将生成的 Token ID 截取掉输入部分

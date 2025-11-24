@@ -1,0 +1,148 @@
+# version: "3.9"
+
+services:
+  # DeepSeek-R1-Distill-Qwen-7B > Qwen2.5-Coder-7B-Instruct > Gemma-2-9B-it
+  tgi-deepseek:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["deepseek"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    environment:
+      # 如模型为 gated 或私有，需要 HF_TOKEN
+      # HF_TOKEN: "hf_xxx"
+      # HUGGINGFACE_HUB_CACHE: /data/cache
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    # GPU 支持（NVIDIA Compose 配置）
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: >
+      --model-id deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+      --dtype float16
+      --cuda-memory-fraction 0.9
+      --max-input-tokens 11008
+      --max-total-tokens 24576
+      --max-batch-total-tokens 32000
+      --max-batch-prefill-tokens 11008
+
+    # unused:
+    #   --max-batch-total-tokens 32768
+    #   --max-batch-prefill-tokens 32768
+    #   --max-batch-size 4
+    #   --num-shard 1
+    #   --quantize bitsandbytes
+    #   --quantize bitsandbytes-nf4
+
+    # obsolete:
+    #   --gpu-memory-utilization 0.9
+
+  tgi-qwen25-7b:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["qwen25-7b"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: >
+      --model-id QWen/Qwen2.5-Coder-7B-Instruct
+      --dtype float16
+      --cuda-memory-fraction 0.9
+      --max-input-tokens 8192
+      --max-total-tokens 16384
+
+  tgi-gemma2-9b:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["gemma2-9b"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: >
+      --model-id google/Gemma-2-9B-it
+      --dtype float16
+      --cuda-memory-fraction 0.9
+      --max-input-tokens 8192
+      --max-total-tokens 16384
+
+  tgi-qwen3-4b:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["qwen3-4b"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: >
+      --model-id QWen/Qwen3-4B
+      --dtype float16
+      --cuda-memory-fraction 0.9
+      --max-input-tokens 28000
+      --max-total-tokens 32000
+
+  mongo:
+    image: mongo:7
+    container_name: chatui-mongo
+    # restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - chatui-mongo-data:/data/db
+
+  chat-ui:
+    image: ghcr.io/huggingface/chat-ui-db:latest
+    container_name: chat-ui
+    # restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "3000:3000"
+    environment:
+      MONGODB_URL: "mongodb://mongo:27017"
+      # OPENAI_BASE_URL: "http://host.docker.internal:8000/v1"  # vLLM
+      # OPENAI_BASE_URL: "http://host.docker.internal:8080/v1"  # TGI
+      OPENAI_BASE_URL: "http://tgi:80/v1"  # TGI
+      OPENAI_API_KEY: "dummy"
+      HF_TOKEN: ${HF_TOKEN}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      ALLOW_INSECURE_COOKIES: "true"
+      TEST_ENV: "test"
+    volumes:
+      - chatui-data:/data
+    # extra_hosts:
+    # this is not pointing to the host machine IP, but to the docker internal network
+    #   - "host.docker.internal:host-gateway"
+
+volumes:
+  chatui-mongo-data:
+  chatui-data:

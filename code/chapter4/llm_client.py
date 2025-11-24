@@ -4,7 +4,10 @@ from dotenv import load_dotenv
 from typing import List, Dict
 
 # 加载 .env 文件中的环境变量
-load_dotenv()
+# load_dotenv()
+load_dotenv(dotenv_path='.vscode/.env.local', override=True)
+# print(os.getcwd())
+# print(os.getenv("LLM_BASE_URL"))
 
 class HelloAgentsLLM:
     """
@@ -15,10 +18,13 @@ class HelloAgentsLLM:
         """
         初始化客户端。优先使用传入参数，如果未提供，则从环境变量加载。
         """
-        self.model = model or os.getenv("LLM_MODEL_ID")
-        apiKey = apiKey or os.getenv("LLM_API_KEY")
-        baseUrl = baseUrl or os.getenv("LLM_BASE_URL")
+        # self.model = model or os.getenv("LLM_MODEL_ID", "Qwen/Qwen3-1.7B")
+        # self.model = model or os.getenv("LLM_MODEL_ID", "Qwen/Qwen3-8B")
+        self.model = model or os.getenv("LLM_MODEL_ID", "deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct")
+        apiKey = apiKey or os.getenv("LLM_API_KEY", "dumy_api_key")
+        baseUrl = baseUrl or os.getenv("LLM_BASE_URL", "http://192.168.18.66:8080/v1")
         timeout = timeout or int(os.getenv("LLM_TIMEOUT", 60))
+        print(f"🛠️ 初始化 LLM 客户端，模型: {self.model}, 地址: {baseUrl}")
         
         if not all([self.model, apiKey, baseUrl]):
             raise ValueError("模型ID、API密钥和服务地址必须被提供或在.env文件中定义。")
