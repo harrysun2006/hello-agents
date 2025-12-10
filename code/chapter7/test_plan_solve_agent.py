@@ -1,16 +1,17 @@
 # test_plan_solve_agent.py
 from dotenv import load_dotenv
 from hello_agents.core.llm import HelloAgentsLLM
-from my_plan_solve_agent import MyPlanAndSolveAgent
+from hello_agents.agents.plan_solve_agent import PlanAndSolveAgent
 
 # 加载环境变量
-load_dotenv()
+load_dotenv(override=True)
 
 # 创建LLM实例
-llm = HelloAgentsLLM()
+llm = HelloAgentsLLM(provider="custom")
+print(f"model = {llm.model}, base_url = {llm.base_url}")
 
 # 创建自定义PlanAndSolveAgent
-agent = MyPlanAndSolveAgent(
+agent = PlanAndSolveAgent(
     name="我的规划执行助手",
     llm=llm
 )
@@ -23,3 +24,4 @@ print(f"\n最终结果: {result}")
 
 # 查看对话历史
 print(f"对话历史: {len(agent.get_history())} 条消息")
+

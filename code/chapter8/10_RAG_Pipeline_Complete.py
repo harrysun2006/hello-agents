@@ -11,6 +11,9 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from hello_agents.tools import RAGTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class RAGPipelineComplete:
     """RAG完整处理管道演示类"""

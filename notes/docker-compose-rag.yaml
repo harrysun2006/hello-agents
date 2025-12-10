@@ -1,0 +1,31 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333" # HTTP API
+      - "6334:6334" # gRPC API
+    volumes:
+      - $HOME/qdrant:/qdrant/data
+    # environment:
+    #   # Optional: Set an API key for enhanced security
+    #   - QDRANT__SERVICE__API_KEY=your_secure_api_key
+    #   # Optional: Enable TLS (requires certificates)
+    #   - QDRANT__SERVICE__ENABLE_TLS=true
+    #   - QDRANT__SERVICE__TLS_CERT_PATH=/qdrant/config/cert.pem
+    #   - QDRANT__SERVICE__TLS_KEY_PATH=/qdrant/config/key.pem
+
+  neo4j:
+    image: neo4j:latest
+    # image: neo4j:5.26.17
+    container_name: neo4j
+    # restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: "neo4j/s3cr3t$123"
+    volumes:
+      - $HOME/neo4j/data:/data
+      - $HOME/neo4j/logs:/logs
+      - $HOME/neo4j/conf:/conf

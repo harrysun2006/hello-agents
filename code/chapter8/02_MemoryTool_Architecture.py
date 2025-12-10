@@ -9,6 +9,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from hello_agents.tools import MemoryTool
 from hello_agents.memory import MemoryConfig
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class MemoryToolArchitectureDemo:
     """MemoryTool架构演示类"""
@@ -16,6 +19,7 @@ class MemoryToolArchitectureDemo:
     def __init__(self):
         self.memory_config = MemoryConfig()
         self.memory_types = ["working", "episodic", "semantic", "perceptual"]
+        self.user_id = "architecture_demo_user"
     
     def demonstrate_memory_tool_init(self):
         """演示MemoryTool初始化过程"""
@@ -30,7 +34,7 @@ class MemoryToolArchitectureDemo:
         
         # 演示MemoryTool的初始化
         memory_tool = MemoryTool(
-            user_id="architecture_demo_user",
+            user_id=self.user_id,
             memory_config=self.memory_config,
             memory_types=self.memory_types
         )
@@ -175,11 +179,11 @@ class MemoryToolArchitectureDemo:
         # 演示自定义配置
         custom_config = MemoryConfig()
         custom_config.working_memory_capacity = 100
-        custom_config.working_memory_ttl = 120
+        custom_config.working_memory_ttl_minutes = 2
         
         print(f"\n⚙️ 自定义配置示例:")
         print(f"工作记忆容量: {custom_config.working_memory_capacity}")
-        print(f"工作记忆TTL: {custom_config.working_memory_ttl}分钟")
+        print(f"工作记忆TTL: {custom_config.working_memory_ttl_minutes}分钟")
         
         # 演示选择性启用记忆类型
         selective_memory_tool = MemoryTool(

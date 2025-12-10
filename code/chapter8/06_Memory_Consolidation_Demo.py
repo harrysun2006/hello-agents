@@ -8,6 +8,9 @@
 import time
 from datetime import datetime, timedelta
 from hello_agents.tools import MemoryTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class MemoryConsolidationDemo:
     """记忆整合演示类"""

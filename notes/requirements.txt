@@ -1,0 +1,15 @@
+# not working
+# transformers==4.57.3
+# sentence-transformers==5.1.1
+# huggingface_hub==1.1.7
+# 
+# working
+# sentence-transformers==4.1.0, sentence-transformers==3.4.1
+sentence-transformers==5.1.1
+transformers==4.39.3
+huggingface_hub==0.36.0
+gradio==5.49.1
+gradio_client==1.13.3
+qdrant-client==1.15.1
+jieba
+google-generativeai

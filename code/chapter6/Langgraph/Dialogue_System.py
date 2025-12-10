@@ -7,12 +7,16 @@
 
 import asyncio
 from typing import TypedDict, Annotated
+
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import InMemorySaver
-import os
+from langchain_huggingface import HuggingFaceEndpoint
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+import os, sys
 from dotenv import load_dotenv
 from tavily import TavilyClient
 
@@ -29,16 +33,49 @@ class SearchState(TypedDict):
     step: str             # 当前步骤
 
 # 初始化模型和Tavily客户端
-llm = ChatOpenAI(
+# OpenAI compatible model
+llm1 = ChatOpenAI(
     model=os.getenv("LLM_MODEL_ID", "gpt-4o-mini"),
     api_key=os.getenv("LLM_API_KEY"),
     base_url=os.getenv("LLM_BASE_URL", "https://api.openai.com/v1"),
     temperature=0.7
 )
 
+# TGI, 不一样的response 结构, 还是使用ChatOpenAI 更好
+# llm2 = HuggingFaceEndpoint(
+#     endpoint_url="http://192.168.18.66:8080/generate",
+#     max_new_tokens=1024,
+#     temperature=0.5,
+#     top_p=0.9,
+#     do_sample=True,
+# )
+llm2 = ChatOpenAI(
+    model='Qwen/Qwen2.5-Coder-7B',
+    base_url="http://192.168.18.77:8080/v1",
+    temperature=0.5,
+    top_p=0.9,
+    # model_kwargs={
+    #     "max_new_tokens": 1024,
+    #     "do_sample": True,        
+    # }
+)
+
+# Google Gemini
+llm3 = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash-lite",
+    api_key=os.getenv("GOOGLE_API_KEY", "dummy"),
+    temperature=0.4,
+    max_output_tokens=1024,
+)
+
+llm = llm2
+
 # 初始化Tavily客户端
 tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
+def get_content(response) -> str:
+    return response if isinstance(response, str) else response.content
+    
 def understand_query_node(state: SearchState) -> SearchState:
     """步骤1：理解用户查询并生成搜索关键词"""
     
@@ -59,10 +96,13 @@ def understand_query_node(state: SearchState) -> SearchState:
 理解：[用户需求总结]
 搜索词：[最佳搜索关键词]"""
 
-    response = llm.invoke([SystemMessage(content=understand_prompt)])
+    # response = llm.invoke([SystemMessage(content=understand_prompt)])
+    response = llm.invoke([SystemMessage(content=understand_prompt), HumanMessage(content=understand_prompt)])
     
     # 提取搜索关键词
-    response_text = response.content
+    # print(f"response={response}")
+    # sys.exit(0)
+    response_text = get_content(response)
     search_query = user_message  # 默认使用原始查询
     
     if "搜索词：" in response_text:
@@ -71,10 +111,10 @@ def understand_query_node(state: SearchState) -> SearchState:
         search_query = response_text.split("搜索关键词：")[1].strip()
     
     return {
-        "user_query": response.content,
+        "user_query": response_text,
         "search_query": search_query,
         "step": "understood",
-        "messages": [AIMessage(content=f"我理解您的需求：{response.content}")]
+        "messages": [AIMessage(content=f"我理解您的需求：{response_text}")]
     }
 
 def tavily_search_node(state: SearchState) -> SearchState:
@@ -141,12 +181,13 @@ def generate_answer_node(state: SearchState) -> SearchState:
 
 请提供一个有用的回答，并说明这是基于已有知识的回答。"""
         
-        response = llm.invoke([SystemMessage(content=fallback_prompt)])
-        
+        # response = llm.invoke([SystemMessage(content=fallback_prompt)])
+        response = llm.invoke([SystemMessage(content=fallback_prompt), HumanMessage(content=fallback_prompt)])
+        response_content = get_content(response)
         return {
-            "final_answer": response.content,
+            "final_answer": response_content,
             "step": "completed",
-            "messages": [AIMessage(content=response.content)]
+            "messages": [AIMessage(content=response_content)]
         }
     
     # 基于搜索结果生成答案
@@ -164,12 +205,13 @@ def generate_answer_node(state: SearchState) -> SearchState:
 4. 回答要结构清晰、易于理解
 5. 如果搜索结果不够完整，请说明并提供补充建议"""
 
-    response = llm.invoke([SystemMessage(content=answer_prompt)])
-    
+    # response = llm.invoke([SystemMessage(content=answer_prompt)])
+    response = llm.invoke([SystemMessage(content=answer_prompt), HumanMessage(content=answer_prompt)])
+    response_content = get_content(response)
     return {
-        "final_answer": response.content,
+        "final_answer": response_content,
         "step": "completed",
-        "messages": [AIMessage(content=response.content)]
+        "messages": [AIMessage(content=response_content)]
     }
 
 # 构建搜索工作流

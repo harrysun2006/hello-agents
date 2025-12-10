@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 from my_advanced_search import create_advanced_search_registry, MyAdvancedSearchTool
 
 # 加载环境变量
-load_dotenv()
+# override=Fase 将加载 ~/.env
+load_dotenv(override=True)
 
 def test_advanced_search():
     """测试高级搜索工具"""

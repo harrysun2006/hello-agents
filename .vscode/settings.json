@@ -19,6 +19,7 @@
   ],
   "java.autobuild.enabled": false,
   "gradle.autoDetect": "off",
+  "editor.fontSize": 20,
   "editor.formatOnSave": false,
   "python.linting.enabled": false,
   "python.formatting.provider": "none",
@@ -61,7 +62,12 @@
   "python.experiments.enabled": false,
   "python.testing.autoTestDiscoverOnSaveEnabled": false,
   "python.testing.promptToConfigure": false,
-
+  "workbench.editorAssociations": {
+    "*.neo4j": "neo4j.cypher",
+  },
+  "files.associations": {
+    "neo4j": "neo4j.cypher",
+  },
   "C_Cpp.enhancedColorization": "enabled",
   "workbench.colorCustomizations": {
     "editor.foreground": "#00cc00",

@@ -1,16 +1,21 @@
 # test_react_agent.py
 from dotenv import load_dotenv
 from hello_agents import HelloAgentsLLM, ToolRegistry
+from hello_agents import calculate, search
 from my_react_agent import MyReActAgent
+# from hello_agents.agents.react_agent import ReActAgent
+
 
 # 加载环境变量
-load_dotenv()
+load_dotenv(override=True)
 
 def test_react_agent():
     """测试MyReActAgent的功能"""
     
     # 创建LLM实例
-    llm = HelloAgentsLLM()
+    # llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(provider="custom")
+    print(f"model = {llm.model}, base_url = {llm.base_url}")
     
     # 创建工具注册表
     tool_registry = ToolRegistry()
@@ -20,7 +25,6 @@ def test_react_agent():
     
     # 注册计算器工具
     try:
-        from hello_agents import calculate
         tool_registry.register_function("calculate", "执行数学计算，支持基本的四则运算", calculate)
         print("✅ 计算器工具注册成功")
     except ImportError:
@@ -28,7 +32,6 @@ def test_react_agent():
 
     # 注册搜索工具（如果可用）
     try:
-        from hello_agents import search
         tool_registry.register_function("search", "搜索互联网信息", search)
         print("✅ 搜索工具注册成功")
     except ImportError:
@@ -57,14 +60,14 @@ def test_react_agent():
         print(f"❌ 测试1失败: {e}")
     
     # 测试2：需要搜索的问题
-    print("\n🔍 测试2：信息搜索问题")
-    search_question = "Python编程语言是什么时候发布的？请告诉我具体的年份。"
+    # print("\n🔍 测试2：信息搜索问题")
+    # search_question = "Python编程语言是什么时候发布的？请告诉我具体的年份。"
     
-    try:
-        result2 = agent.run(search_question)
-        print(f"\n🎯 测试2结果: {result2}")
-    except Exception as e:
-        print(f"❌ 测试2失败: {e}")
+    # try:
+    #     result2 = agent.run(search_question)
+    #     print(f"\n🎯 测试2结果: {result2}")
+    # except Exception as e:
+    #     print(f"❌ 测试2失败: {e}")
     
     # 测试3：复合问题（需要多步推理）
     print("\n🧠 测试3：复合推理问题")
@@ -95,13 +98,13 @@ def test_custom_prompt():
     print("="*60)
     
     # 创建LLM和工具注册表
-    llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(provider="custom")
     tool_registry = ToolRegistry()
     
     # 注册计算器工具
     try:
-        from hello_agents import calculate
-        tool_registry.register_function("calculate", calculate, "数学计算工具")
+        tool_registry.register_function("calculate", "数学计算工具", calculate)
+        # tool_registry.register_function("calculate", "执行数学计算，支持基本的四则运算和中文符号", calculate)
     except ImportError:
         pass
     
@@ -124,12 +127,13 @@ Action: [tool_name[input] 或 Finish[答案]]
         name="数学专家助手",
         llm=llm,
         tool_registry=tool_registry,
-        max_steps=3,
+        max_steps=5,
         custom_prompt=custom_prompt
     )
     
     # 测试数学问题
     math_question = "计算 15 × 8 + 32 ÷ 4 的结果"
+    # math_question = "计算 15 * 8 + 32 / 4 的结果"
     
     try:
         result = custom_agent.run(math_question)
@@ -139,7 +143,7 @@ Action: [tool_name[input] 或 Finish[答案]]
 
 if __name__ == "__main__":
     # 运行基础测试
-    test_react_agent()
+    # test_react_agent()
     
     # 运行自定义提示词测试
     test_custom_prompt()

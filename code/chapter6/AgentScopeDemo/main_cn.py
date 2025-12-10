@@ -3,15 +3,18 @@
 三国狼人杀 - 基于AgentScope的中文版狼人杀游戏
 融合三国演义角色和传统狼人杀玩法
 """
-import asyncio
-import os
-import random
+import asyncio, dotenv, os, random
+
+from dotenv import load_dotenv
 from typing import List, Dict, Optional
 
+import google.generativeai as genai
+from google.genai import types
+
 from agentscope.agent import ReActAgent
-from agentscope.model import DashScopeChatModel
+from agentscope.model import DashScopeChatModel, OpenAIChatModel, GeminiChatModel
 from agentscope.pipeline import MsgHub, sequential_pipeline, fanout_pipeline
-from agentscope.formatter import DashScopeMultiAgentFormatter
+from agentscope.formatter import DashScopeMultiAgentFormatter, OpenAIMultiAgentFormatter, GeminiMultiAgentFormatter
 
 from prompt_cn import ChinesePrompts
 from game_roles import GameRoles
@@ -33,6 +36,7 @@ from utils_cn import (
     MAX_DISCUSSION_ROUND,
 )
 
+load_dotenv(override=True)
 
 class ThreeKingdomsWerewolfGame:
     """三国狼人杀游戏主类"""
@@ -51,21 +55,87 @@ class ThreeKingdomsWerewolfGame:
         # 女巫道具状态
         self.witch_has_antidote = True
         self.witch_has_poison = True
+
+    # DashScope（通义千问）接口, token 消耗较多, 结果尚可!
+    def get_model1(self):
+        model = DashScopeChatModel(
+            model_name="qwen-max",
+            api_key=os.environ["DASHSCOPE_API_KEY"],
+            enable_thinking=True,
+        )
+        formatter = DashScopeMultiAgentFormatter()
+        return model, formatter
+    
+    # OpenAI Compatible Model 接口 (local TGI) 
+    # g2.log (Qwen/Qwen2.5-Coder-7B-Instruct): 0/5, 没有行动, 对话逻辑混乱
+    def get_model2(self):
+        model_id = os.getenv("LLM_MODEL_ID", "Qwen/Qwen2.5-Coder-7B-Instruct")
+        api_key = os.getenv("LLM_API_KEY", "dummy_api_key")
+        base_url = os.getenv("LLM_BASE_URL", "http://localhost:8080/v1")
+        kwargs = {
+            "temperature": 0.9,
+            # "top_K": 64,
+            # "top_P": 0.95,
+            # "max_output_tokens": 1024,
+            # "response_mime_type": "text/plain",
+            # "extra_body": {"chat_template_kwargs": {"enable_function_call": False}},
+        }
+        print(f"model_id = {model_id}, base_url = {base_url}")
+        model = OpenAIChatModel(
+            model_name=model_id,
+            api_key=api_key,
+            client_args={"base_url": base_url},
+            # config_kwargs=kwargs,
+            generate_kwargs=kwargs,
+        )
+        formatter = OpenAIMultiAgentFormatter()
+        return model, formatter
+
+    # Gemini 接口: id=null 应该是google model 不返回id 字段
+    # 下面warning 需要通过 generate_kwargs fix ?
+    # Warning: there are non-text parts in the response: ['function_call'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+    # gemini-2.0-flash (g3a.log): 效果4/5
+    # gemini-2.0-flash-lite: 效果3/5, 回应快, 但是有些逻辑矛盾(玩家后续的reason/action未将死人剔除)
+    # gemini-2.5-flash-lite (g3b.log): id = null? 效果3/5
+    # gemini-2.5-pro (g3c.log): id = null? 效果2/5, 不一致, high latency (估计是调用次数太多!), 对话更多贴近三国背景而非狼人杀!
+    # gemini-3-pro-preview (g3d.log): id = null? 效果尚可 
+    def get_model3(self):
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        genai.configure(transport='grpc')
+        model_id = os.getenv("GOOGLE_MODEL", "dummy")
+        api_key = os.getenv("GOOGLE_API_KEY", "dummy_api_key")
+        kwargs = {
+            "temperature": 0.5,        # 控制随机性 (0.0 - 1.0)，ReAct 建议不要太高，0.5 左右较好
+            "top_p": 0.95,             # 核采样
+            "top_k": 64,               #用于采样的候选集大小
+            "max_output_tokens": 256, # 最大输出长度
+            "response_mime_type": "text/plain" # 明确指定期望返回纯文本 (有助于减少非预期的结构化数据)
+        }
+        print(f"model_id = {model_id}")
+        model = GeminiChatModel(
+            model_name=model_id,
+            api_key=api_key,
+            # enable_function_call=False,
+            # config_kwargs=kwargs,
+            generate_kwargs=kwargs
+        )
+        formatter = GeminiMultiAgentFormatter()
+        return model, formatter
         
     async def create_player(self, role: str, character: str) -> ReActAgent:
         """创建具有三国背景的玩家"""
         name = get_chinese_name(character)
         self.roles[name] = role
-        
+
+        # model, formatter = self.get_model1()
+        model, formatter = self.get_model2()
+        # model, formatter = self.get_model3()
+
         agent = ReActAgent(
             name=name,
             sys_prompt=ChinesePrompts.get_role_prompt(role, character),
-            model=DashScopeChatModel(
-                model_name="qwen-max",
-                api_key=os.environ["DASHSCOPE_API_KEY"],
-                enable_thinking=True,
-            ),
-            formatter=DashScopeMultiAgentFormatter(),
+            model=model,
+            formatter=formatter
         )
         
         # 角色身份确认

@@ -10,6 +10,9 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from hello_agents.tools import MemoryTool
 from hello_agents.memory import MemoryItem
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class WorkingMemoryDemo:
     """工作记忆演示类"""
@@ -188,12 +191,16 @@ class WorkingMemoryDemo:
                 temporary=True,
                 cleanup_test=True
             )
+            
+        # 添加低重要性的记忆后的状态
+        stats_after = self.memory_tool.execute("stats")
+        print(f"\n添加低重要性的记忆后的状态: {stats_after}")
         
         # 触发基于重要性的清理
         print(f"\n🧹 执行基于重要性的清理...")
         cleanup_result = self.memory_tool.execute("forget",
             strategy="importance_based",
-            threshold=0.3
+            threshold=0.8
         )
         print(f"清理结果: {cleanup_result}")
         

@@ -7,6 +7,9 @@
 
 import time
 from hello_agents.tools import RAGTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class AdvancedSearchDemo:
     """高级检索演示类"""

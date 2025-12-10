@@ -8,6 +8,9 @@
 from datetime import datetime
 from typing import List
 from hello_agents.tools import MemoryTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 def memory_tool_execute_demo():
     """MemoryTool execute方法演示"""

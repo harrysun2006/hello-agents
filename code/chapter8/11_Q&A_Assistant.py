@@ -13,11 +13,14 @@
 import os
 import time
 import json
+import gradio as gr
+
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from hello_agents.tools import MemoryTool, RAGTool
-import gradio as gr
+from dotenv import load_dotenv
 
+load_dotenv(override=True)
 
 class PDFLearningAssistant:
     """智能文档问答助手"""

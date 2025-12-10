@@ -8,6 +8,9 @@
 import time
 from hello_agents import SimpleAgent, HelloAgentsLLM, ToolRegistry
 from hello_agents.tools import MemoryTool, RAGTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class AgentIntegrationDemo:
     """Agent工具集成演示类"""

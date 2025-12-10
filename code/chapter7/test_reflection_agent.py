@@ -1,13 +1,15 @@
 # test_reflection_agent.py
 from dotenv import load_dotenv
 from hello_agents import HelloAgentsLLM
-from my_reflection_agent import MyReflectionAgent
+# from my_reflection_agent import MyReflectionAgent
+from hello_agents.agents.reflection_agent import ReflectionAgent
 
-load_dotenv()
+load_dotenv(override=True)
 llm = HelloAgentsLLM()
+print(f"model = {llm.model}, base_url = {llm.base_url}")
 
 # 使用默认通用提示词
-general_agent = MyReflectionAgent(name="我的反思助手", llm=llm)
+general_agent = ReflectionAgent(name="我的反思助手", llm=llm)
 
 # 使用自定义代码生成提示词（类似第四章）
 code_prompts = {
@@ -15,7 +17,7 @@ code_prompts = {
     "reflect": "请审查代码的算法效率：\n任务：{task}\n代码：{content}",
     "refine": "请根据反馈优化代码：\n任务：{task}\n反馈：{feedback}"
 }
-code_agent = MyReflectionAgent(
+code_agent = ReflectionAgent(
     name="我的代码生成助手",
     llm=llm,
     custom_prompts=code_prompts
@@ -24,3 +26,6 @@ code_agent = MyReflectionAgent(
 # 测试使用
 result = general_agent.run("写一篇关于人工智能发展历程的简短文章")
 print(f"最终结果: {result}")
+
+result = code_agent.run("写一个双指针的算法")
+print(f"最终代码: {result}")

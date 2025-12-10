@@ -4,6 +4,7 @@ AutoGen 软件开发团队协作案例
 
 import os
 import asyncio
+import traceback
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 
@@ -11,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 先测试一个版本，使用 OpenAI 客户端
+from autogen_core.models import UserMessage, ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
@@ -19,11 +21,20 @@ from autogen_agentchat.ui import Console
 
 def create_openai_model_client():
     """创建 OpenAI 模型客户端用于测试"""
-    return OpenAIChatCompletionClient(
-        model=os.getenv("LLM_MODEL_ID", "gpt-4o"),
-        api_key=os.getenv("LLM_API_KEY"),
-        base_url=os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
+    model = os.getenv("LLM_MODEL_ID", "gpt-4o")
+    api_key = os.getenv("LLM_API_KEY")
+    base_url = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
+    timeout = int(os.getenv("LLM_TIMEOUT", 60))
+    model_info = ModelInfo(
+        vision=False,           # TGI 上的 Qwen Coder 一般没有视觉输入
+        function_calling=False, # 不支持 OpenAI-style tools/function calling 就填 False
+        json_output=True,       # 不支持原生 JSON mode 就 False（可以通过 prompt 自己约定 JSON）
+        structured_output=True, # 没用到结构化输出就 False
+        family="unknown",       # 不属于内置 family，填 "unknown"
     )
+    print(f"使用 OpenAI 模型客户端，模型: {model}, 地址: {base_url}, 超时: {timeout}s!")
+    return OpenAIChatCompletionClient(model=model, model_info=model_info, api_key=api_key, 
+                                      base_url=base_url, timeout=timeout, vision=False)
 
 def create_product_manager(model_client):
     """创建产品经理智能体"""
@@ -184,9 +195,9 @@ if __name__ == "__main__":
     except ValueError as e:
         print(f"❌ 配置错误：{e}")
         print("请检查 .env 文件中的配置是否正确")
+        traceback.print_exc()
     except Exception as e:
         print(f"❌ 运行错误：{e}")
-        import traceback
         traceback.print_exc()
 
 

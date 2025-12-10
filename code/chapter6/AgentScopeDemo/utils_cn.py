@@ -110,7 +110,8 @@ class GameModerator(AgentBase):
             role="system"
         )
         self.game_log.append(content)
-        await self.print(msg)
+        # await self.print(msg)
+        print(msg.get_text_content())
         return msg
     
     async def night_announcement(self, round_num: int) -> Msg:

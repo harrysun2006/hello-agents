@@ -11,6 +11,9 @@ import hashlib
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from hello_agents.tools import MemoryTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class MemoryTypesDeepDive:
     """四种记忆类型深度解析演示类"""

@@ -9,6 +9,9 @@ import os
 import time
 import tempfile
 from hello_agents.tools import RAGTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 class MarkItDownPipelineDemo:
     """MarkItDown处理管道演示类"""
