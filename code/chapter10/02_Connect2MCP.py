@@ -20,15 +20,18 @@ async def connect_to_server():
     client = MCPClient(["python", "my_mcp_server.py"])
     async with client:
         # 使用client...
+        tools = await client.list_tools()
+        print(f"可用工具: {[t['name'] for t in tools]}")
+        resources = await client.list_resources()
+        print(f"可用资源：{resources}")
+        templates = await client.list_prompts()
+        print(f"可用模版：{templates}")
         pass
 
 # 运行异步函数
 asyncio.run(connect_to_server())
 
-
-async def discover_tools():
-    client = MCPClient(["npx", "-y", "@modelcontextprotocol/server-filesystem", "."])
-
+async def discover_tools(client: MCPClient):
     async with client:
         # 获取所有可用工具
         tools = await client.list_tools()
@@ -48,7 +51,8 @@ async def discover_tools():
                         param_desc = param_info.get('description', '')
                         print(f"  - {param_name} ({param_type}): {param_desc}")
 
-asyncio.run(discover_tools())
+client = MCPClient(["npx", "-y", "@modelcontextprotocol/server-filesystem", "."])
+asyncio.run(discover_tools(client))
 
 # 输出示例：
 # 服务器提供了 5 个工具：

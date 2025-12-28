@@ -42,9 +42,9 @@ def minimal_sft_training():
     print(f"  训练轮数: {config['num_epochs']}")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ 训练完成! 模型保存在: {result_dict['output_dir']}")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ 训练完成! 模型保存在: {result_dict['output_dir']}")
     
     return config
 
@@ -95,10 +95,10 @@ def standard_sft_training():
     print(f"  LoRA秩: {config['lora_r']}")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ 训练完成!")
-    # print(f"📁 模型保存在: {result_dict['output_dir']}")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ 训练完成!")
+    print(f"📁 模型保存在: {result_dict['output_dir']}")
     
     return config
 
@@ -139,9 +139,9 @@ def full_dataset_training():
     print(f"  预计样本数: ~7500 (GSM8K训练集)")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ 训练完成!")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ 训练完成!")
     
     return config
 
@@ -191,7 +191,8 @@ def compare_learning_rates():
     }
     print(f"  learning_rate: {config['learning_rate']}")
     
-    # result = tool.run(config)
+    result = tool.run(config)
+    print(result)
     
     return learning_rates
 
@@ -236,7 +237,8 @@ def memory_optimized_training():
     print(f"  预计显存占用: ~3-4GB")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
+    result = tool.run(config)
+    print(result)
     
     return config
 
@@ -281,10 +283,10 @@ def practical_training_example():
     print("# print(f'✅ 训练完成! 模型保存在: {result_dict[\"output_dir\"]}')")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ 训练完成!")
-    # print(f"📁 模型保存在: {result_dict['output_dir']}")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ 训练完成!")
+    print(f"📁 模型保存在: {result_dict['output_dir']}")
     
     return config
 

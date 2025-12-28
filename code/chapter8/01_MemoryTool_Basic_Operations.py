@@ -53,6 +53,14 @@ def add_memory_demo(memory_tool):
         location="研发中心"
     )
     print(f"情景记忆: {result}")
+    result = memory_tool.execute(
+        "add",
+        content="2023年开始训练 LLM 模型",
+        memory_type="episodic",
+        importance=0.6,
+        event_type="milestone",
+        location="研发中心"
+    )
     
     # 添加语义记忆
     result = memory_tool.execute(
@@ -85,6 +93,11 @@ def search_memory_demo(memory_tool):
     print("基础搜索 - '记忆系统':")
     result = memory_tool.execute("search", query="记忆系统", limit=3)
     print(result)
+    """
+    1. [语义记忆] 记忆系统包括工作记忆、情景记忆、语义记忆和感知记忆四种类型 (重要性: 0.90)
+    2. [情景记忆] 2024年开始深入研究AI Agent技术 (重要性: 0.80)
+    3. [工作记忆] 正在学习HelloAgents框架的记忆系统 (重要性: 0.70)
+    """
     
     # 按类型搜索
     print("\n按类型搜索 - 语义记忆中的'记忆':")
@@ -95,14 +108,38 @@ def search_memory_demo(memory_tool):
         limit=2
     )
     print(result)
+    """
+    1. [语义记忆] 记忆系统包括工作记忆、情景记忆、语义记忆和感知记忆四种类型 (重要性: 0.90)
+    """
     
     # 设置重要性阈值
     print("\n高重要性记忆搜索:")
     result = memory_tool.execute(
         "search", 
-        query="AI Agent", 
+        # query="AI Agent", 
+        query="航天科技",
         min_importance=0.7, 
-        limit=3
+        limit=2
+    )
+    print(result)
+    
+    print("\n高重要性记忆搜索B:")
+    result = memory_tool.execute(
+        "search", 
+        # query="AI Agent", 
+        query="航天科技",
+        min_importance=0.7, 
+        limit=5
+    )
+    print(result)
+    
+    print("\n高重要性记忆搜索C:")
+    result = memory_tool.execute(
+        "search", 
+        # query="AI Agent", 
+        query="航天科技",
+        min_importance=0.59, 
+        limit=6
     )
     print(result)
 
@@ -132,7 +169,7 @@ def memory_management_demo(memory_tool):
         content="这是一个临时的测试记忆，重要性很低",
         memory_type="working",
         importance=0.1
-    )
+    ) # RAM
     
     # 基于重要性的遗忘
     print("基于重要性的遗忘 (阈值=0.2):")
@@ -140,7 +177,7 @@ def memory_management_demo(memory_tool):
         "forget",
         strategy="importance_based",
         threshold=0.2
-    )
+    ) # - "这是一个临时的测试记忆，重要性很低" (0.1)
     print(result)
     
     # 记忆整合 - 将重要的工作记忆转为情景记忆
@@ -150,7 +187,7 @@ def memory_management_demo(memory_tool):
         from_type="working",
         to_type="episodic",
         importance_threshold=0.6
-    )
+    ) # 1 working 0.7 => 1 episodic 0.77
     print(result)
 
 def main():
@@ -175,6 +212,14 @@ def main():
         # 5. 记忆管理演示
         memory_management_demo(memory_tool)
         
+        # memory 前后比较
+        result = memory_tool.execute("summary", limit=5)
+        print("记忆摘要:")
+        print(result)
+        print("\n📊 统计信息:")
+        result = memory_tool.execute("stats")
+        print(result)
+    
         print("\n" + "=" * 60)
         print("🎉 MemoryTool基础操作演示完成！")
         print("=" * 60)
@@ -198,3 +243,54 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+TODO:
+- ⚠️ search_memory_demo 
+高重要性记忆搜索 behaviour?
+limit=3 => limit=2: 结果从3条(0.9, 0.8, 0.6) => 2条(0.9, 0.8);
+limit=3 => limit=5: 还是3条
+min_importance=0.7 => min_importance=0.5: 还是3条, 重要性0.6的感知记忆也被选中? 
+query 被忽略了? working 类型记忆也被忽略了?
+
+基础搜索 - '记忆系统': 返回3条(0.9, 0.8, 0.7)
+
+高重要性记忆搜索:
+Batches: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00,  9.29it/s]
+Batches: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00,  9.21it/s]
+INFO:hello_agents.memory.types.semantic:✅ 检索到 1 条相关记忆
+Batches: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00,  9.59it/s]
+🔍 找到 3 条相关记忆:
+1. [语义记忆] 记忆系统包括工作记忆、情景记忆、语义记忆和感知记忆四种类型 (重要性: 0.90)
+2. [情景记忆] 2024年开始深入研究AI Agent技术 (重要性: 0.80)
+3. [感知记忆] 查看了记忆系统的架构图和实现代码 (重要性: 0.60)
+
+- ✅️ 结果验证
+📋 记忆类型分布:
+  • 工作记忆: 1 条 (平均重要性: 0.70)
+  • 情景记忆: 1 条 (平均重要性: 0.80)
+  • 语义记忆: 1 条 (平均重要性: 0.90)
+  • 感知记忆: 1 条 (平均重要性: 0.60)
+
+⭐ 重要记忆 (前3条):
+  1. 记忆系统包括工作记忆、情景记忆、语义记忆和感知记忆四种类型 (重要性: 0.90)
+  2. 2024年开始深入研究AI Agent技术 (重要性: 0.80)
+  3. 查看了记忆系统的架构图和实现代码 (重要性: 0.60)
+===>
+📋 记忆类型分布:
+  • 工作记忆: 0 条 (平均重要性: 0.00)
+  • 情景记忆: 2 条 (平均重要性: 0.79)
+  • 语义记忆: 1 条 (平均重要性: 0.90)
+  • 感知记忆: 1 条 (平均重要性: 0.60)
+
+⭐ 重要记忆 (前4条):
+  1. 记忆系统包括工作记忆、情景记忆、语义记忆和感知记忆四种类型 (重要性: 0.90)
+  2. 2024年开始深入研究AI Agent技术 (重要性: 0.80)
+  3. 正在学习HelloAgents框架的记忆系统 (重要性: 0.77)
+  4. 查看了记忆系统的架构图和实现代码 (重要性: 0.60)
+
+正在学习HelloAgents框架的记忆系统 (working/RAM, 0.7)
+==>
+正在学习HelloAgents框架的记忆系统 (episodic/sqlite, 0.77=0.7*1.1)
+
+"""

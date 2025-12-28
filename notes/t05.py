@@ -1,156 +1,22 @@
-import os
+# 学习 markitdown: 
+# png => md (OCR 不工作)
+# pdf => md (列表、表格等格式丢失，内容可以)
 
-from hello_agents import SimpleAgent, HelloAgentsLLM, ToolRegistry
-from hello_agents.tools import MemoryTool, RAGTool
-from dotenv import load_dotenv
-from neo4j import GraphDatabase
+# import easyocr
+from markitdown import MarkItDown
 
-load_dotenv(override=True)
+# png_path = "../temp/t1.png"
+# reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+# results = reader.readtext(png_path, detail=0, paragraph=True)
+# text = "\n".join(results)
+# print(text)
 
-# 8.1.4 本章学习目标与快速体验
-# 没有具体添加搜索合并插入记忆，还无法如期工作
-# 可以用来检查系统各个组件是否正确配置!
-# llm: http://192.168.18.77:8080/v1 - Qwen/Qwen2.5-Coder-7B-Instruct
-# RAG: http://192.168.18.88:6333
-# neo4j: neo4j://192.168.18.88:7687
-def t01():
-    # 创建LLM实例
-    llm = HelloAgentsLLM()
-    # llm = HelloAgentsLLM(provider="custom")
-    print(f"model = {llm.model}, base_url = {llm.base_url}")
-
-    # 创建Agent
-    agent = SimpleAgent(
-        name="智能助手",
-        llm=llm,
-        system_prompt="你是一个有记忆和知识检索能力的AI助手"
-    )
-
-    # 创建工具注册表
-    tool_registry = ToolRegistry()
-
-    # 添加记忆工具
-    memory_tool = MemoryTool(user_id="user123")
-    tool_registry.register_tool(memory_tool)
-
-    # 添加RAG工具
-    rag_tool = RAGTool(knowledge_base_path="./knowledge_base")
-    tool_registry.register_tool(rag_tool)
-
-    # 为Agent配置工具
-    agent.tool_registry = tool_registry
-
-    # 开始对话
-    response = agent.run("你好！请记住我叫张三，我是一名Python开发者")
-    print(response)
-
-    # 没有搜索插入记忆, 还无法如期工作!
-    # response2 = agent.run("你还记得我的学习进度吗？")
-    # print(response2)
-
-# 8.2.2 快速体验：30秒上手记忆功能
-def t02():
-    # 创建具有记忆能力的Agent
-    llm = HelloAgentsLLM()
-    agent = SimpleAgent(name="记忆助手", llm=llm)
-
-    # 创建记忆工具
-    memory_tool = MemoryTool(user_id="user123")
-    tool_registry = ToolRegistry()
-    tool_registry.register_tool(memory_tool)
-    agent.tool_registry = tool_registry
-    
-    # 体验记忆功能
-    print("=== 添加多个记忆 ===")
-
-    # 添加第一个记忆
-    result1 = memory_tool.execute("add", content="用户张三是一名Python开发者，专注于机器学习和数据分析", memory_type="semantic", importance=0.8)
-    print(f"记忆1: {result1}")
-
-    # 添加第二个记忆
-    result2 = memory_tool.execute("add", content="李四是前端工程师，擅长React和Vue.js开发", memory_type="semantic", importance=0.7)
-    print(f"记忆2: {result2}")
-
-    # 添加第三个记忆
-    result3 = memory_tool.execute("add", content="王五是产品经理，负责用户体验设计和需求分析", memory_type="semantic", importance=0.6)
-    print(f"记忆3: {result3}")
-
-    print("\n=== 搜索特定记忆 ===")
-    # 搜索前端相关的记忆
-    print("🔍 搜索 '前端工程师':")
-    result = memory_tool.execute("search", query="前端工程师", limit=3)
-    print(result)
-
-    print("\n=== 记忆摘要 ===")
-    result = memory_tool.execute("summary")
-    print(result)
-
-# 8.3.3 快速体验：30秒上手RAG功能
-def t03():
-    # 创建具有RAG能力的Agent
-    llm = HelloAgentsLLM()
-    agent = SimpleAgent(name="知识助手", llm=llm)
-
-    # 创建RAG工具
-    rag_tool = RAGTool(
-        knowledge_base_path="./knowledge_base",
-        collection_name="test_collection",
-        rag_namespace="test"
-    )
-
-    tool_registry = ToolRegistry()
-    tool_registry.register_tool(rag_tool)
-    agent.tool_registry = tool_registry
-
-    # 体验RAG功能
-    # 添加第一个知识
-    result1 = rag_tool.execute("add_text", 
-        text="Python是一种高级编程语言，由Guido van Rossum于1991年首次发布。Python的设计哲学强调代码的可读性和简洁的语法。",
-        document_id="python_intro")
-    print(f"知识1: {result1}")
-
-    # 添加第二个知识  
-    result2 = rag_tool.execute("add_text",
-        text="机器学习是人工智能的一个分支，通过算法让计算机从数据中学习模式。主要包括监督学习、无监督学习和强化学习三种类型。",
-        document_id="ml_basics")
-    print(f"知识2: {result2}")
-
-    # 添加第三个知识
-    result3 = rag_tool.execute("add_text",
-        text="RAG（检索增强生成）是一种结合信息检索和文本生成的AI技术。它通过检索相关知识来增强大语言模型的生成能力。",
-        document_id="rag_concept")
-    print(f"知识3: {result3}")
-
-
-    print("\n=== 搜索知识 ===")
-    result = rag_tool.execute("search",
-        query="Python编程语言的历史",
-        limit=3,
-        min_score=0.1
-    )
-    print(result)
-
-    print("\n=== 知识库统计 ===")
-    result = rag_tool.execute("stats")
-    print(result)
-
-def t05():
-    uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-    username = os.getenv("NEO4J_USERNAME", "neo4j")
-    password = os.getenv("NEO4J_PASSWORD", "password")
-    driver = GraphDatabase.driver(uri, auth=(username, password))
-    try:
-        with driver.session(database="neo4j") as session:
-            result = session.run("RETURN 1 AS n")
-            print("Neo4j 连接成功，返回:", result.single())
-    except Exception as e:
-        print("Neo4j 连接失败:", e)
-    finally:
-        driver.close()
-
-if __name__ == "__main__":
-    # t01()
-    # t02()
-    # t03()
-    t05()
-    pass
+md = MarkItDown(enable_plugins=True, lign_tables=True, preserve_newlines=True)
+# 支持 .docx, .xlsx, .pptx, .html, .zip, .png/.jpg, .mp3 等
+result = md.convert("../temp/t1.pdf")
+# text = getattr(result, "text_content", None)
+# if isinstance(text, str) and text.strip():
+#     print(text)
+with open("output.md", "w", encoding="utf-8") as f:
+    f.write(result.text_content)
+# print(result.text_content)

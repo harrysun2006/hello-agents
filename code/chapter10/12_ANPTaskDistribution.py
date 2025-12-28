@@ -79,3 +79,12 @@ def assign_task(task_description):
 assign_task("训练一个大型深度学习模型，需要GPU支持")
 assign_task("处理大量文本数据，需要高内存")
 assign_task("运行轻量级数据分析任务")
+
+"""
+TODO: 换model; 调整提示词; 增加步骤?...
+- 未按预期选择最合适的计算节点
+[run.0]: response=请提供计算节点的详细信息以便进行分析。
+[run.0]:tool_calls=[]
+[run.0]: final_response=请提供计算节点的详细信息以便进行分析。
+请提供计算节点的详细信息以便进行分析。
+"""

@@ -17,7 +17,8 @@ class AdvancedSearchDemo:
     def __init__(self):
         self.rag_tool = RAGTool(
             knowledge_base_path="./advanced_search_kb",
-            rag_namespace="advanced_search_demo"
+            rag_namespace="advanced_search_demo",
+            collection_name="ch8ex05_01"
         )
         self._setup_knowledge_base()
     
@@ -198,12 +199,12 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             start_time = time.time()
             result = self.rag_tool.execute("search",
                                          query=query,
-                                         limit=2,
+                                         limit=3,
                                          enable_advanced_search=False)
             search_time = time.time() - start_time
             
             print(f"耗时: {search_time:.3f}秒")
-            print(f"结果: {result[:200]}...")
+            print(f"结果: {result[:600]}...")
     
     def demonstrate_mqe_search(self):
         """演示多查询扩展（MQE）搜索"""
@@ -220,6 +221,10 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             ("深度学习", "测试概念扩展"),
             ("优化算法", "测试技术扩展"),
             ("神经网络", "测试架构扩展")
+            # ("注意力机制", "测试精确概念匹配"),
+            # ("深度学习优化", "测试主题匹配"),
+            # ("图像分类CNN", "测试多词匹配"),
+            # ("机器翻译模型", "测试跨文档匹配")
         ]
         
         print(f"\n🔄 MQE搜索测试:")
@@ -244,8 +249,8 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             
             print(f"基础搜索耗时: {basic_time:.3f}秒")
             print(f"MQE搜索耗时: {mqe_time:.3f}秒")
-            print(f"基础结果: {basic_result[:150]}...")
-            print(f"MQE结果: {mqe_result[:150]}...")
+            print(f"基础结果: {basic_result[:600]}...")
+            print(f"MQE结果: {mqe_result[:600]}...")
             print(f"性能对比: MQE搜索耗时是基础搜索的 {mqe_time/basic_time:.1f} 倍")
     
     def demonstrate_hyde_search(self):
@@ -445,3 +450,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+TODO:
+- demonstrate_hyde_search 答案似乎没有直接调用 LLM model 返回的答案更全面? 写个简单例子直接比较?
+- demonstrate_combined_advanced_search 答案好像也没有直接调用 LLM model 返回的答案更星系全面? 写个例子分析具体原因?
+"""

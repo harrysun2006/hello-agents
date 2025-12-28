@@ -77,12 +77,7 @@ def main():
 
     # 配置 LLM
     from hello_agents.core.llm import HelloAgentsLLM
-    llm = HelloAgentsLLM(
-        model="ZhipuAI/GLM-4.6",
-        api_key="6ff5219e-410a-4293-8772-0c948bfa691c",
-        base_url="https://api-inference.modelscope.cn/v1/",
-        provider="modelscope"
-    )
+    llm = HelloAgentsLLM(provider="custom")
 
     # 使用示例
     agent = ContextAwareAgent(

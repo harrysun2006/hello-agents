@@ -16,6 +16,10 @@ agent.add_tool(mcp_tool)
 response = agent.run("计算 123 + 456")
 print(response)  # 智能体会自动调用add工具
 
+# 智能体可以直接使用展开后的工具
+response = agent.run("计算 25 乘以 22")
+print(response)  # 输出：25 乘以 22 的结果是 550
+
 print("\n" + "=" * 70)
 print("方式2：连接外部MCP服务器（使用多个服务器）")
 print("=" * 70)
@@ -24,11 +28,17 @@ print("=" * 70)
 
 # 示例1：连接到社区提供的文件系统服务器
 fs_tool = MCPTool(
-    name="filesystem",  # 指定唯一名称
+    name="fs",  # 指定唯一名称
     description="访问本地文件系统",
     server_command=["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
 )
 agent.add_tool(fs_tool)
+result = fs_tool.run({
+    "action": "call_tool",
+    "tool_name": "read_file",
+    "arguments": {"path": "my_README.md"}
+})
+print(f"通过 MCPTool 调用方法: {result}")
 
 # 示例2：连接到自定义的 Python MCP 服务器
 # 关于如何编写自定义MCP服务器，请参考10.5章节
@@ -47,3 +57,10 @@ print(f"- {custom_tool.name}: {custom_tool.description}")
 # Agent现在可以自动使用这些工具！
 response = agent.run("请读取my_README.md文件，并总结其中的主要内容")
 print(response)
+
+"""
+TODO:
+- 最后读取文件时出错, 提示:
+对不起，我无法直接读取文件。不过，你可以将文件内容粘贴到这里，我会帮你总结主要内容。
+是host和目录的问题?
+"""

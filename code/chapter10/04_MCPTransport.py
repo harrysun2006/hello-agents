@@ -37,6 +37,18 @@ result = mcp_tool.run({
 })
 print(result)
 
+result = mcp_tool.run({
+    "action": "call_tool",
+    "tool_name": "greet",
+})
+print(result)
+
+result = mcp_tool.run({
+    "action": "call_tool",
+    "tool_name": "get_system_info",
+})
+print(result)
+
 from hello_agents.tools import MCPTool
 
 # 方式1：使用自定义Python服务器
@@ -66,7 +78,7 @@ from hello_agents.protocols.mcp.client import MCPClient
 
 async def test_http_transport():
     # 连接到远程 HTTP MCP 服务器
-    client = MCPClient("http://api.example.com/mcp")
+    client = MCPClient("http://192.168.18.88:8000/mcp")
 
     async with client:
         # 获取服务器信息
@@ -74,11 +86,15 @@ async def test_http_transport():
         print(f"远程服务器工具: {len(tools)} 个")
 
         # 调用远程工具
-        result = await client.call_tool("process_data", {
-            "data": "Hello, World!",
-            "operation": "uppercase"
+        result = await client.call_tool("to_uppercase", {
+            "text": "Hello, World!"
         })
-        print(f"远程处理结果: {result}")
+        print(f"调用 to_uppercase 结果: {result}")
+
+        result = await client.call_tool("hello", {
+            "name": "Harry"
+        })
+        print(f"调用 hello 结果: {result}")
 
 # 注意：需要实际的 HTTP MCP 服务器
-# asyncio.run(test_http_transport())
+asyncio.run(test_http_transport())

@@ -29,7 +29,8 @@ class RAGPipelineComplete:
         # 初始化RAG工具
         self.rag_tool = RAGTool(
             knowledge_base_path="./rag_pipeline_kb",
-            rag_namespace="complete_pipeline"
+            rag_namespace="complete_pipeline",
+            collection_name="ch8ex10_01"
         )
         
         print("✅ RAG系统初始化完成")
@@ -362,7 +363,8 @@ class RAGPipelineComplete:
             "图灵测试是什么？",
             "深度学习的关键技术突破",
             "AlphaGo的意义",
-            "通用人工智能的未来"
+            "通用人工智能的未来",
+            "算盘的历史",
         ]
         
         for query in test_queries:
@@ -372,7 +374,7 @@ class RAGPipelineComplete:
                                           limit=3)
             search_time = time.time() - start_time
             print(f"  查询: '{query}' ({search_time:.4f}秒)")
-            print(f"    结果: {results[:120]}...")
+            print(f"  结果: {results[:600]}...")
         
         # 演示结构化文档的分块
         print(f"\n3. 结构化文档分块:")
@@ -431,14 +433,15 @@ class RAGPipelineComplete:
         structured_queries = [
             "线性回归的优缺点",
             "K-means聚类算法",
-            "PCA降维原理"
+            "PCA降维原理",
+            "咖啡对睡眠和健康的影响",
         ]
         
         for query in structured_queries:
             results = self.rag_tool.execute("search",
                                           query=query,
                                           limit=2)
-            print(f"  结构化查询 '{query}': {results[:100]}...")
+            print(f"  结构化查询 '{query}': {results[:600]}...")
     
     def demonstrate_advanced_retrieval(self):
         """演示高级检索策略"""
@@ -462,7 +465,8 @@ class RAGPipelineComplete:
             "机器学习模型性能优化方法",
             "提升ML模型准确率的技巧",
             "模型调优和超参数优化",
-            "机器学习模型评估指标"
+            "机器学习模型评估指标",
+            "唐宋诗词的发展"
         ]
         
         print(f"扩展查询:")
@@ -476,7 +480,7 @@ class RAGPipelineComplete:
                                           query=query,
                                           limit=3)
             all_results.append((query, results))
-            print(f"  查询结果 '{query[:20]}...': {results[:80]}...")
+            print(f"  查询结果 '{query[:50]}...': {results[:300]}...")
         
         # 演示假设文档嵌入（HyDE）
         print(f"\n2. 假设文档嵌入（HyDE）演示:")
@@ -487,19 +491,19 @@ class RAGPipelineComplete:
         # 生成假设答案
         hypothetical_answer = """深度学习是机器学习的一个子领域，它使用多层神经网络来学习数据的复杂模式。深度学习模型通过多个隐藏层来提取数据的层次化特征表示。常见的深度学习架构包括卷积神经网络（CNN）、循环神经网络（RNN）和Transformer。深度学习在图像识别、自然语言处理、语音识别等领域取得了突破性进展。"""
         
-        print(f"假设答案: {hypothetical_answer[:100]}...")
+        print(f"假设答案: {hypothetical_answer[:300]}...")
         
         # 使用假设答案进行检索
         hyde_results = self.rag_tool.execute("search",
                                            query=hypothetical_answer,
                                            limit=5)
-        print(f"HyDE检索结果: {hyde_results[:120]}...")
+        print(f"HyDE检索结果: {hyde_results[:320]}...")
         
         # 对比直接查询结果
         direct_results = self.rag_tool.execute("search",
                                              query=user_question,
                                              limit=5)
-        print(f"直接查询结果: {direct_results[:120]}...")
+        print(f"直接查询结果: {direct_results[:320]}...")
         
         # 演示混合检索策略
         print(f"\n3. 混合检索策略演示:")
@@ -524,7 +528,7 @@ class RAGPipelineComplete:
                                           limit=2)
             mixed_results[sub_query] = results
             print(f"  子查询: {sub_query}")
-            print(f"    结果: {results[:80]}...")
+            print(f"    结果: {results[:500]}...")
         
         # 演示相关性重排序
         print(f"\n4. 相关性重排序演示:")
@@ -536,7 +540,7 @@ class RAGPipelineComplete:
         initial_results = self.rag_tool.execute("search",
                                               query=ranking_query,
                                               limit=8)
-        print(f"初始检索结果: {initial_results[:150]}...")
+        print(f"初始检索结果: {initial_results[:500]}...")
         
         # 模拟重排序过程（基于多个因素）
         print(f"重排序因素:")
@@ -548,7 +552,7 @@ class RAGPipelineComplete:
         final_results = self.rag_tool.execute("search",
                                             query=ranking_query,
                                             limit=5)
-        print(f"重排序后结果: {final_results[:150]}...")
+        print(f"重排序后结果: {final_results[:500]}...")
     
     def demonstrate_intelligent_qa(self):
         """演示智能问答生成"""
@@ -604,7 +608,7 @@ class RAGPipelineComplete:
                                          limit=4)
             qa_time = time.time() - start_time
             
-            print(f"回答 ({qa_time:.3f}秒): {answer[:200]}...")
+            print(f"回答 ({qa_time:.3f}秒): {answer[:500]}...")
         
         # 演示上下文构建过程
         print(f"\n2. 上下文构建过程演示:")
@@ -623,13 +627,13 @@ class RAGPipelineComplete:
         context_search = self.rag_tool.execute("search",
                                              query="神经网络过拟合防止方法",
                                              limit=6)
-        print(f"  检索到的上下文: {context_search[:180]}...")
+        print(f"  检索到的上下文: {context_search[:500]}...")
         
         # 生成最终答案
         final_answer = self.rag_tool.execute("ask",
                                            question=context_question,
                                            limit=5)
-        print(f"  最终答案: {final_answer[:250]}...")
+        print(f"  最终答案: {final_answer[:500]}...")
         
         # 演示多轮对话支持
         print(f"\n3. 多轮对话支持:")
@@ -654,7 +658,7 @@ class RAGPipelineComplete:
             answer = self.rag_tool.execute("ask",
                                          question=context_query,
                                          limit=3)
-            print(f"  回答: {answer[:150]}...")
+            print(f"  回答: {answer[:500]}...")
         
         # 演示答案质量评估
         print(f"\n4. 答案质量评估:")
@@ -666,7 +670,7 @@ class RAGPipelineComplete:
                                      question=quality_question,
                                      limit=5)
         
-        print(f"生成答案: {answer[:300]}...")
+        print(f"生成答案: {answer[:500]}...")
         
         # 模拟质量评估指标
         quality_metrics = {
@@ -856,3 +860,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+"""

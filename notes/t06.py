@@ -1,97 +1,90 @@
-# 测试 https://github.com/jjyaoao/HelloAgents/blob/main/README.md 中的代码
-from hello_agents import HelloAgentsLLM, ToolRegistry, search, calculate
-from hello_agents import SimpleAgent, ReActAgent, ReflectionAgent, PlanAndSolveAgent
+# 学习 neo4j
+import os
+from neo4j import GraphDatabase
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-# 创建LLM实例 - 框架自动检测provider
-llm = HelloAgentsLLM()
+NEO_URI = os.getenv("NEO4J_BOLT", "bolt://localhost:7687")
+NEO_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
+NEO_PASSWORD = os.getenv("NEO4J_PASSWORD")
+NEO_DB = os.getenv("NEO4J_DATABASE", "neo4j")
 
-# 或手动指定provider（可选）
-# llm = HelloAgentsLLM(provider="modelscope")
+driver = GraphDatabase.driver(NEO_URI, auth=(NEO_USERNAME, NEO_PASSWORD))
 
-# 基本使用
-# agent.stream_run 会产生重复chunks, why?
-def t00():
-    # 创建SimpleAgent
-    agent = SimpleAgent(
-        name="AI助手",
-        llm=llm,
-        system_prompt="你是一个有用的AI助手"
-    )
-
-    # 开始对话
-    response = agent.run("你好！请介绍一下自己")
-    print(response)
-
-    # 流式对话
-    print("助手: ", end="", flush=True)
-    for chunk in agent.stream_run("什么是人工智能？"):
-        print(chunk, end="", flush=True)
-    print()
-
-    # 检查自动检测结果
-    print(f"自动检测的provider: {llm.provider}")
-
-# 1. ReActAgent - 推理与行动结合
-# --- 第 1 步 ---
-# ⚠️ 警告：未能解析出有效的Action，流程终止。
-# ⏰ 已达到最大步数，流程终止。
+# test neo4j connection
 def t01():
-    # 创建工具注册表
-    tool_registry = ToolRegistry()
-    tool_registry.register_function("search", "网页搜索工具", search)
-    tool_registry.register_function("calculate", "数学计算工具", calculate)
+    uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+    username = os.getenv("NEO4J_USERNAME", "neo4j")
+    password = os.getenv("NEO4J_PASSWORD", "password")
+    driver = GraphDatabase.driver(uri, auth=(username, password))
+    try:
+        with driver.session(database="neo4j") as session:
+            result = session.run("RETURN 1 AS n")
+            print("Neo4j 连接成功，返回:", result.single())
+    except Exception as e:
+        print("Neo4j 连接失败:", e)
+    finally:
+        driver.close()
 
-    # 创建ReAct Agent
-    react_agent = ReActAgent(
-        name="研究助手",
-        llm=llm,
-        tool_registry=tool_registry,
-        max_steps=5
-    )
-
-    # 执行需要工具的任务
-    result = react_agent.run("搜索最新的GPT-4发展情况，并计算其参数量相比GPT-3的增长倍数")
-
-# 2. ReflectionAgent - 自我反思与迭代优化
-def t02():
-    # 创建Reflection Agent
-    reflection_agent = ReflectionAgent(
-        name="代码专家",
-        llm=llm,
-        max_iterations=3
-    )
-
-    # 生成并优化代码
-    code = reflection_agent.run("编写一个高效的素数筛选算法，要求时间复杂度尽可能低")
-    print(f"最终代码:\n{code}")
-
-# 3. PlanAndSolveAgent - 分解规划与逐步执行
-# model=Qwen/Qwen2.5-Coder-7B-Instruct
-# 结果不稳定: 77.4, 40.36, 108.145, 229.7, ...
-# 1) 加入temperature=0.0 之后稳定=77.4
-# 答案错误! 漏了第一年利润!
-# 2) prompt 加入"列计划时请分别计算逐年的营收，成本，利润。" 答案正确!
-# 107.4万!!
-# 直接在chat-ui 提问可以得出正确答案!
-def t03():
-    # 创建Plan and Solve Agent
-    plan_agent = PlanAndSolveAgent(name="问题解决专家", llm=llm)
-
-    # 解决复杂问题
-    problem = """
-    一家公司第一年营收100万，第二年增长20%，第三年增长15%。
-    如果每年的成本是营收的70%，请计算三年的总利润。
-    列计划时请分别计算逐年的营收，成本，利润。
+# —— Create ——
+def create_people_and_relation():
+    cypher = """
+    MERGE (a:Person {name: $name1})
+      ON CREATE SET a.age = $age1
+    MERGE (b:Person {name: $name2})
+      ON CREATE SET b.age = $age2
+    MERGE (a)-[r:KNOWS]->(b)
+      ON CREATE SET r.since = $since, r.where = $where
+    RETURN a, r, b
     """
-    answer = plan_agent.run(problem, temperature=0.0)
-    print(answer)
+    with driver.session(database=NEO_DB) as session:
+        result = session.run(
+            cypher,
+            name1="Alice", age1=30,
+            name2="Bob", age2=28,
+            since=2024, where="苏州"
+        )
+        print(result.single())
+
+# —— Read ——
+def get_people_over(age):
+    cypher = """
+    MATCH (p:Person)
+    WHERE p.age > $age
+    RETURN p.name AS name, p.age AS age
+    """
+    with driver.session(database=NEO_DB) as session:
+        return list(session.run(cypher, age=age))
+
+# —— Update ——
+def update_person_city(name, city):
+    cypher = """
+    MATCH (p:Person {name: $name})
+    SET p.city = $city
+    RETURN p
+    """
+    with driver.session(database=NEO_DB) as session:
+        return session.run(cypher, name=name, city=city).single()
+
+# —— Delete ——
+def delete_person(name):
+    cypher = """
+    MATCH (p:Person {name: $name})
+    DETACH DELETE p
+    """
+    with driver.session(database=NEO_DB) as session:
+        session.run(cypher, name=name)
+
+def main():
+    create_people_and_relation()
+    print(get_people_over(20))
+    update_person_city("Alice", "Shanghai")
+    # delete_person("Bob")
+    # delete_person("Alice")
+    driver.close()
 
 if __name__ == "__main__":
-    # t00()
     # t01()
-    # t02()
-    t03()
+    main()
     pass

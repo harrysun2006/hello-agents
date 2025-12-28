@@ -152,9 +152,9 @@ receptionist = SimpleAgent(
 # 添加 A2A 工具
 receptionist.add_tool(tech_tool)
 receptionist.add_tool(sales_tool)
-
 print("✓ 接待员 Agent 创建完成")
 print("✓ 已集成 A2A 工具: tech_expert, sales_advisor")
+print(f"✓ 所有可用工具: {receptionist.list_tools()}")
 
 # ============================================================
 # 5. 测试集成系统
@@ -167,8 +167,8 @@ print("="*60)
 # 测试问题
 test_questions = [
     "你们的产品有什么优惠活动吗？",
-    "如何配置服务器的SSL证书？",
-    "我想了解一下价格方案"
+    # "如何配置服务器的SSL证书？",
+    # "我想了解一下价格方案"
 ]
 
 for i, question in enumerate(test_questions, 1):
@@ -201,3 +201,18 @@ try:
 except KeyboardInterrupt:
     print("\n\n✅ 系统已停止")
 
+"""
+TODO:
+- 有时候 receptionist 分派任务正确, 但是没有继续调用 sales_advisor.answer, 缺少parameters:
+[run.0]:response=感谢您的询问，关于产品的优惠活动，我将使用销售顾问工具来获取相关信息。
+[TOOL_CALL:sales_advisor]
+[run.0]:tool_calls=[]
+[run.0]: final_response=感谢您的询问，关于产品的优惠活动，我将使用销售顾问工具来获取相关信息。
+
+- 有时候  TOOL_CALL tool 和 parameters 都有，但无法继续调用:
+[run.0]: response=您好，感谢您的咨询。关于我们的产品优惠活动，您可以咨询我们的销售顾问以获取最新的信息。请问您对具体的产品或服务感兴趣吗？我可以帮您提供更详细的信息。
+`[TOOL_CALL:sales_advisor:product=您的产品名称]`
+[run.0]:tool_calls=[{'tool_name': 'sales_advisor', 'parameters': 'product=您的产品名称', 'original': '[TOOL_CALL:sales_advisor:product=您的产品名称]'}]
+[run.1]: response=非常抱歉，由于系统暂时出现了问题，导致我无法为您查询到最新的优惠活动信息。请您稍后再试，或者直接联系我们的销售顾问获取详细信息。
+
+"""

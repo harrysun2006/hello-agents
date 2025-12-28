@@ -247,7 +247,7 @@ class IntelligentQADemo:
                 qa_time = time.time() - start_time
                 
                 print(f"⏱️ 响应时间: {qa_time:.3f}秒")
-                print(f"🤖 回答: {answer[:300]}...")
+                print(f"🤖 回答: {answer[:600]}...")
                 print("-" * 40)
     
     def demonstrate_context_construction(self):
@@ -364,7 +364,7 @@ class IntelligentQADemo:
             print(f"📏 答案长度: {answer_length}字符")
             print(f"📚 包含引用: {'是' if has_citations else '否'}")
             print(f"⭐ 质量评分: {quality_score:.2f}/10")
-            print(f"🤖 答案预览: {answer[:200]}...")
+            print(f"🤖 答案预览: {answer[:600]}...")
             print("-" * 50)
         
         # 质量分析总结
@@ -475,7 +475,7 @@ class IntelligentQADemo:
             
             print(f"⏱️ 响应时间: {response_time:.3f}秒")
             print(f"🤖 回答长度: {len(answer)}字符")
-            print(f"📄 回答预览: {answer[:250]}...")
+            print(f"📄 回答预览: {answer[:600]}...")
     
     def demonstrate_citation_system(self):
         """演示引用系统"""
@@ -511,8 +511,8 @@ class IntelligentQADemo:
                                                            limit=3,
                                                            include_citations=False)
             
-            print(f"🔗 带引用回答: {answer_with_citations[:400]}...")
-            print(f"📝 无引用回答: {answer_without_citations[:200]}...")
+            print(f"🔗 带引用回答: {answer_with_citations[:600]}...")
+            print(f"📝 无引用回答: {answer_without_citations[:600]}...")
             
             # 分析引用信息
             citation_count = answer_with_citations.count("参考来源")

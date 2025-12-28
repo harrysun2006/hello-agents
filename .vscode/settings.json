@@ -1,6 +1,34 @@
 {
+  // C, C++
+  "C_Cpp.enhancedColorization": "enabled",
   "C_Cpp.errorSquiggles": "disabled",
   "cmake.ignoreCMakeListsMissing": true,
+
+  // General: editor, workbench etc.
+  "editor.fontSize": 20,
+  "editor.formatOnSave": false,
+  "editor.tokenColorCustomizations": {
+    "[Default Dark Modern]": {
+      "comments": "#00ff00"
+    }
+  },
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.editorAssociations": {
+    "*.neo4j": "neo4j.cypher",
+  },
+  "files.associations": {
+    "neo4j": "neo4j.cypher",
+  },
+  "workbench.colorCustomizations": {
+    "editor.foreground": "#00cc00",
+    // "settings.textInputForeground": "#37373d"
+  },
+
+  // Java
+  "java.autobuild.enabled": false,
+  "gradle.autoDetect": "off",
+
+  // Local history
   "local-history.enabled": 0,
   "local-history.daysLimit": 3,
   "local-history.maxDisplay": 3,
@@ -17,10 +45,8 @@
     "**/0*/**",
     "**/.vscode/settings.json",
   ],
-  "java.autobuild.enabled": false,
-  "gradle.autoDetect": "off",
-  "editor.fontSize": 20,
-  "editor.formatOnSave": false,
+
+  // Python & Jupyter
   "python.linting.enabled": false,
   "python.formatting.provider": "none",
   "python.terminal.executeInFileDir": false,
@@ -28,11 +54,7 @@
   "python.defaultInterpreterPath": "${env:HOME}/micromamba/envs/v3.12/bin/python",
   "python.interpreterPaths": [
     "${env:HOME}/micromamba/envs/v3.12/bin/python",
-    "${env:HOME}/.pyenv/versions/3.9.13/bin/python"
-  ],
-  "jupyter.interpreterPaths": [
-    "${env:HOME}/micromamba/envs/v3.12/bin/python",
-    "${env:HOME}/.pyenv/versions/3.9.13/bin/python"
+    // "${env:HOME}/.pyenv/versions/3.9.13/bin/python"
   ],
   "python.analysis.exclude": [
     "/usr/bin/python*",
@@ -40,6 +62,25 @@
     "/usr/local/**",
     "/opt/homebrew/Caskroom/**",
     "/opt/homebrew/bin/python*",
+  ],
+  "python.condaPath": "",
+  "python.condaInterpreter": "",
+  "python.condaAutoActivateBase": false,
+  "python.venvPaths": [],
+  "python.envFile": "",
+  "python.venvFolders": [],
+  "python.poetryPath": "",
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.enablePytestSupport": true,
+  "python.analysis.experimentalserver": true,
+  "python.experiments.enabled": true,
+  "python.testing.autoTestDiscoverOnSaveEnabled": true,
+  "python.testing.promptToConfigure": true,
+  // "python.languageServer": "None",
+  "python.languageServer": "Pylance",
+
+  "jupyter.interpreterPaths": [
+    "${env:HOME}/micromamba/envs/v3.12/bin/python",
   ],
   "jupyter.kernels.excludeWorkspaceInterpreterKernels": true,
   "jupyter.kernels.exclude": [
@@ -49,36 +90,5 @@
     "/Applications/Xcode.app/*",
     "/opt/homebrew/*"
   ],
-  "python.condaPath": "",
-  "python.condaInterpreter": "",
-  "python.condaAutoActivateBase": false,
-  "python.venvPaths": [],
-  "python.envFile": "",
-  "python.venvFolders": [],
-  "python.poetryPath": "",
-  "python.analysis.autoSearchPaths": false,
-  "python.analysis.enablePytestSupport": false,
-  "python.analysis.experimentalserver": false,
-  "python.experiments.enabled": false,
-  "python.testing.autoTestDiscoverOnSaveEnabled": false,
-  "python.testing.promptToConfigure": false,
-  "workbench.editorAssociations": {
-    "*.neo4j": "neo4j.cypher",
-  },
-  "files.associations": {
-    "neo4j": "neo4j.cypher",
-  },
-  "C_Cpp.enhancedColorization": "enabled",
-  "workbench.colorCustomizations": {
-    "editor.foreground": "#00cc00",
-    // "settings.textInputForeground": "#37373d"
-  },
-  "editor.tokenColorCustomizations": {
-    "[Default Dark Modern]": {
-      "comments": "#00ff00"
-    }
-  },
-  "workbench.colorTheme": "Dark",
-  "python.languageServer": "None",
   "jupyter.notebookFileRoot": "${workspaceFolder}",
 }

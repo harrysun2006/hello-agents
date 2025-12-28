@@ -32,18 +32,19 @@ class AgentIntegrationDemo:
         
         self.rag_tool = RAGTool(
             knowledge_base_path="./agent_integration_kb",
-            rag_namespace="agent_demo"
+            rag_namespace="agent_demo",
+            collection_name="ch8ex08_01"
         )
         
         print("✅ MemoryTool和RAGTool初始化完成")
         
         # 创建Agent
         print("\n2. 创建Agent...")
-        self.llm = HelloAgentsLLM()
+        self.llm = HelloAgentsLLM(provider='custom')
         self.agent = SimpleAgent(
             name="智能学习助手",
             llm=self.llm,
-            description="集成记忆和RAG功能的智能助手"
+            # description="集成记忆和RAG功能的智能助手"
         )
         
         print("✅ Agent创建完成")
@@ -60,8 +61,8 @@ class AgentIntegrationDemo:
         # 显示Agent状态
         print(f"\n📊 Agent状态:")
         print(f"  名称: {self.agent.name}")
-        print(f"  描述: {self.agent.description}")
-        print(f"  可用工具: {list(self.tool_registry.tools.keys())}")
+        # print(f"  描述: {self.agent.description}")
+        print(f"  可用工具: {list(self.tool_registry._tools.keys())}")
     
     def demonstrate_tool_registry_pattern(self):
         """演示工具注册模式"""
@@ -77,7 +78,7 @@ class AgentIntegrationDemo:
         # 演示工具注册过程
         print(f"\n🔧 工具注册详情:")
         
-        for tool_name, tool_instance in self.tool_registry.tools.items():
+        for tool_name, tool_instance in self.tool_registry._tools.items():
             print(f"\n工具: {tool_name}")
             print(f"  类型: {type(tool_instance).__name__}")
             print(f"  描述: {tool_instance.description}")
@@ -125,7 +126,7 @@ class AgentIntegrationDemo:
                 "memory_type": "episodic",
                 "importance": 0.8,
                 "topic": "agent_integration"
-            }),
+            }), # sqlite, qdrant.hello_agents_vectors
             ("search", {
                 "query": "Agent集成",
                 "limit": 2
@@ -144,7 +145,7 @@ class AgentIntegrationDemo:
         # 先添加一些内容
         self.rag_tool.execute("add_text",
                             text="Agent工具集成是HelloAgents框架的核心特性，允许Agent使用多种工具来完成复杂任务。",
-                            document_id="agent_integration_guide")
+                            document_id="agent_integration_guide") # qdrant.ch8ex08_01
         
         rag_operations = [
             ("search", {
@@ -197,7 +198,7 @@ class AgentIntegrationDemo:
         
         rag_result = self.rag_tool.execute("add_text",
                                          text=learning_content,
-                                         document_id="observer_pattern")
+                                         document_id="observer_pattern") # qdrant.ch8ex08_01
         print(f"RAG添加结果: {rag_result}")
         
         # 记录学习活动到记忆系统
@@ -206,7 +207,7 @@ class AgentIntegrationDemo:
                                                 memory_type="episodic",
                                                 importance=0.8,
                                                 topic="design_patterns",
-                                                pattern_type="observer")
+                                                pattern_type="observer") # sqlite, qdrant.hello_agents_vectors
         print(f"Memory记录结果: {memory_result}")
         
         # 场景2：回顾学习历程
@@ -238,7 +239,7 @@ class AgentIntegrationDemo:
                                                      content="查询了观察者模式的应用场景，准备在GUI项目中使用",
                                                      memory_type="working",
                                                      importance=0.7,
-                                                     application_context="gui_project")
+                                                     application_context="gui_project") # RAM
         print(f"应用记录: {application_memory}")
         
         # 场景4：学习分析
@@ -295,12 +296,12 @@ class AgentIntegrationDemo:
         
         self.rag_tool.execute("add_text",
                             text=ml_content,
-                            document_id="ml_learning_path")
+                            document_id="ml_learning_path") # qdrant.ch8ex08_01
         
         knowledge_structure = self.rag_tool.execute("ask",
                                                   question="机器学习的学习路径是什么？",
                                                   limit=3)
-        print(f"知识结构: {knowledge_structure[:200]}...")
+        print(f"知识结构: {knowledge_structure[:600]}...")
         
         # 步骤2：记录学习计划到记忆系统
         print(f"\n步骤2: 记录学习计划")
@@ -310,7 +311,7 @@ class AgentIntegrationDemo:
                                              memory_type="episodic",
                                              importance=0.9,
                                              plan_type="learning",
-                                             subject="machine_learning")
+                                             subject="machine_learning") # sqlite, qdrant.hello_agents_vectors
         print(f"计划记录: {plan_memory}")
         
         # 步骤3：检索相关学习经验
@@ -327,14 +328,14 @@ class AgentIntegrationDemo:
         final_advice = self.rag_tool.execute("ask",
                                             question="如何制定有效的机器学习学习计划？",
                                             limit=4)
-        print(f"最终建议: {final_advice[:300]}...")
+        print(f"最终建议: {final_advice[:600]}...")
         
         # 记录编排过程
         orchestration_memory = self.memory_tool.execute("add",
                                                        content="完成了复杂的学习计划制定任务，使用了RAG和Memory的协同编排",
                                                        memory_type="working",
                                                        importance=0.8,
-                                                       task_type="orchestration")
+                                                       task_type="orchestration") # RAM
         print(f"\n编排记录: {orchestration_memory}")
     
     def demonstrate_performance_analysis(self):
@@ -360,7 +361,7 @@ class AgentIntegrationDemo:
             self.memory_tool.execute("add",
                                    content=f"性能测试记忆 {i+1}",
                                    memory_type="working",
-                                   importance=0.5)
+                                   importance=0.5) # RAM
         memory_time = time.time() - start_time
         print(f"Memory工具 - 5次添加操作: {memory_time:.3f}秒")
         
@@ -381,12 +382,12 @@ class AgentIntegrationDemo:
         # 模拟协同工作流程
         self.rag_tool.execute("add_text",
                             text="这是一个性能测试文档",
-                            document_id="perf_test")
+                            document_id="perf_test") # qdrant.ch8ex08_01
         
         self.memory_tool.execute("add",
                                 content="执行了性能测试",
                                 memory_type="working",
-                                importance=0.6)
+                                importance=0.6) # RAM
         
         rag_result = self.rag_tool.execute("search",
                                          query="性能测试",
@@ -407,10 +408,12 @@ class AgentIntegrationDemo:
         
         # 获取最终统计
         final_memory_stats = self.memory_tool.execute("stats")
+        final_memory_summary = self.memory_tool.execute("summary")
         final_rag_stats = self.rag_tool.execute("stats")
         
         print(f"\n📊 最终系统状态:")
         print(f"Memory系统: {final_memory_stats}")
+        print(f"\n{final_memory_summary}")
         print(f"RAG系统: {final_rag_stats}")
 
 def main():
@@ -467,3 +470,31 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+""" 最终结果
+Memory系统: 11
+working (RAM): 8?
+  - 查询了观察者模式的应用场景，准备在GUI项目中使用 = 0.7
+  - 完成了复杂的学习计划制定任务，使用了RAG和Memory的协同编排 = 0.8
+  - 性能测试记忆 1~5 = 0.5
+  - 执行了性能测试 = 0.6
+episodic (sqlite & qdrant.hello_agents_vectors): 3
+  - 学习了Agent工具集成模式 = 0.8
+  - 学习了观察者设计模式的定义、结构和应用场景 = 0.8
+  - 制定了机器学习学习计划，包括基础、进阶、高级三个阶段 = 0.9
+sematic: 0
+perceptual: 0
+
+RAG系统 (qdrant.ch8ex08_01):4
+
+Neo4j: 16 ?
+USE neo4j MATCH(n:Entity) RETURN(n);
+TODO: 
+- neo4j 中的 nodes 和 relations 是如何生成的 ??
+参考
+[_extract_entities](https://github.com/jjyaoao/HelloAgents/blob/main/hello_agents/memory/types/semantic.py#L590)
+[_extract_relations](https://github.com/jjyaoao/HelloAgents/blob/main/hello_agents/memory/types/semantic.py#L729)
+- 为何 nodes 之间有这些 relation types: "REPRESENTS", "NSUBJ", "COMPOUND_NN", "DOBJ", "CCOMP" ??
+- neo4j 在整个框架 中的角色和功能 ??
+- 这些 nodes 和 relations 有何用处 ??
+"""

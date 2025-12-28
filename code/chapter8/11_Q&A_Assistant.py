@@ -36,7 +36,11 @@ class PDFLearningAssistant:
 
         # 初始化工具
         self.memory_tool = MemoryTool(user_id=user_id)
-        self.rag_tool = RAGTool(rag_namespace=f"pdf_{user_id}")
+        self.rag_tool = RAGTool(
+            knowledge_base_path="./qa_assistant",
+            rag_namespace=f"pdf_{user_id}",
+            collection_name="ch8ex11_01",
+        )
 
         # 学习统计
         self.stats = {

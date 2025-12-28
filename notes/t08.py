@@ -1,73 +1,75 @@
-# 学习 neo4j
-import os
-from neo4j import GraphDatabase
-from dotenv import load_dotenv
+# 学习 parquet
+import pandas as pd
+import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 
-load_dotenv(override=True)
+# read parquet file using pandas
+def t01():
+    df = pd.read_parquet("gsm8k.parquet")
+    print(df.columns)
+    print(df.head())
 
-NEO_URI = os.getenv("NEO4J_BOLT", "bolt://localhost:7687")
-NEO_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
-NEO_PASSWORD = os.getenv("NEO4J_PASSWORD")
-NEO_DB = os.getenv("NEO4J_DATABASE", "neo4j")
+# write pandas df to a parquet file
+def t02():
+    df = pd.DataFrame({
+        "id": [1, 2, 3],
+        "name": ["Alice", "Bob", "Charlie"],
+        "score": [88.5, 92.0, 79.5]
+    })
 
-driver = GraphDatabase.driver(NEO_URI, auth=(NEO_USERNAME, NEO_PASSWORD))
+    df.to_parquet("test.parquet", engine="pyarrow", compression="snappy")
 
-# —— Create ——
-def create_people_and_relation():
-    cypher = """
-    MERGE (a:Person {name: $name1})
-      ON CREATE SET a.age = $age1
-    MERGE (b:Person {name: $name2})
-      ON CREATE SET b.age = $age2
-    MERGE (a)-[r:KNOWS]->(b)
-      ON CREATE SET r.since = $since, r.where = $where
-    RETURN a, r, b
-    """
-    with driver.session(database=NEO_DB) as session:
-        result = session.run(
-            cypher,
-            name1="Alice", age1=30,
-            name2="Bob", age2=28,
-            since=2024, where="苏州"
-        )
-        print(result.single())
+# read parquet with pyarrow
+def t05():
+    table = pq.read_table("gsm8k.parquet")
+    df = table.to_pandas()
+    print(df.columns)
+    print(df.head())
 
-# —— Read ——
-def get_people_over(age):
-    cypher = """
-    MATCH (p:Person)
-    WHERE p.age > $age
-    RETURN p.name AS name, p.age AS age
-    """
-    with driver.session(database=NEO_DB) as session:
-        return list(session.run(cypher, age=age))
+# write to parquet with pyarrow
+def t06():
+    df = pd.DataFrame({
+        "id": [1, 2, 3],
+        "name": ["Alice", "Bob", "Charlie"],
+        "score": [88.5, 92.0, 79.5]
+    })
+    table = pa.Table.from_pandas(df)
+    pq.write_table(table, "test2.parquet", compression="zstd")
 
-# —— Update ——
-def update_person_city(name, city):
-    cypher = """
-    MATCH (p:Person {name: $name})
-    SET p.city = $city
-    RETURN p
-    """
-    with driver.session(database=NEO_DB) as session:
-        return session.run(cypher, name=name, city=city).single()
+# read parquet with polars
+def t07():
+    df = pl.read_parquet("gsm8k.parquet")
+    print(df.columns)
+    print(df.head())
+    for col in df.columns:
+        print(f"{col}[0]: {df[col][0]}")
 
-# —— Delete ——
-def delete_person(name):
-    cypher = """
-    MATCH (p:Person {name: $name})
-    DETACH DELETE p
-    """
-    with driver.session(database=NEO_DB) as session:
-        session.run(cypher, name=name)
+# write to parquet with polars
+def t08():
+    df = pl.DataFrame({
+        "id": [1, 2, 3],
+        "score": [88.5, 92.0, 79.5]
+    })
 
-def main():
-    create_people_and_relation()
-    print(get_people_over(20))
-    update_person_city("Alice", "Shanghai")
-    # delete_person("Bob")
-    # delete_person("Alice")
-    driver.close()
+    df.write_parquet("test2.parquet", compression="zstd")
+
+def t09():
+    df = pl.scan_parquet("gsm8k.parquet")
+    # print(df.explain(optimized=True))
+    df.collect()
+    print(df.head())
+    cols = df.collect_schema().names()
+    print(cols)
+    for col in cols:
+        print(f"{col}: {df.collect()[col][0]}")
 
 if __name__ == "__main__":
-    main()
+    # t01()
+    # t02()
+    # t05()
+    # t06()
+    t07()
+    t08()
+    t09()
+    pass

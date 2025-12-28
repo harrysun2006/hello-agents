@@ -59,7 +59,8 @@ def quick_test():
     sft_config = {
         "action": "train",
         "algorithm": "sft",
-        "model_name": "Qwen/Qwen3-0.6B",
+        # "model_name": "Qwen/Qwen3-0.6B",
+        "model_name": "Qwen/Qwen3-8B",
         "output_dir": "./output/quick_test/sft",
         "max_samples": 10,
         "num_epochs": 1,
@@ -67,6 +68,11 @@ def quick_test():
         "use_lora": True,
         "lora_r": 8,
         "lora_alpha": 16,
+        # "gradient_accumulation_steps": 2,
+        # 显存关键：混合精度（如果框架支持）
+        # "fp16": True,          # 或者 "bf16": True（看你的 GPU 支持）
+        # "gradient_checkpointing": True,
+        # "use_cache": False,
     }
     
     print("SFT配置:")
@@ -87,7 +93,8 @@ def quick_test():
     grpo_config = {
         "action": "train",
         "algorithm": "grpo",
-        "model_name": "Qwen/Qwen3-0.6B",
+        # "model_name": "Qwen/Qwen3-0.6B",
+        "model_name": "Qwen/Qwen3-8B",
         "output_dir": "./output/quick_test/grpo",
         "max_samples": 10,
         "num_epochs": 1,

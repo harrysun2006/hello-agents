@@ -10,7 +10,7 @@ from hello_agents.tools import MCPTool
 from dotenv import load_dotenv
 
 # 加载.env文件中的环境变量
-load_dotenv(dotenv_path="../HelloAgents/.env")
+load_dotenv(override=True)
 
 print("="*70)
 print("多Agent协作的智能文档助手")
@@ -77,7 +77,7 @@ print("="*70)
 try:
     # 步骤1：GitHub搜索
     print("\n【步骤3】Agent1 搜索GitHub...")
-    search_task = "搜索关于'AI agent'的GitHub仓库，返回前5个最相关的结果"
+    search_task = "搜索关于'AI agent'的GitHub仓库，返回前7个最相关的结果"
     
     search_results = github_searcher.run(search_task)
     

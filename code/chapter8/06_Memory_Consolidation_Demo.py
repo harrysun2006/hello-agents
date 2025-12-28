@@ -87,6 +87,8 @@ class MemoryConsolidationDemo:
                                             content=content,
                                             memory_type="working",
                                             importance=importance,
+                                            metadata={},
+                                            # metadata={"priority": "high", "type": "working"},
                                             **memory)
             
             print(f"  {i+1}. {content[:40]}... (重要性: {importance})")
@@ -142,11 +144,11 @@ class MemoryConsolidationDemo:
         
         # 执行不同阈值的整合
         consolidation_tests = [
-            (0.6, "低阈值整合 - 整合更多记忆"),
-            (0.8, "高阈值整合 - 只整合最重要的记忆")
+            (0.6, "低阈值整合 - 整合更多记忆", "working", "episodic"),
+            (0.8, "高阈值整合 - 只整合最重要的记忆", "episodic", "semantic")
         ]
         
-        for threshold, description in consolidation_tests:
+        for threshold, description, from_type, to_type in consolidation_tests:
             print(f"\n🔄 {description} (阈值: {threshold}):")
             
             # 获取整合前状态
@@ -156,8 +158,8 @@ class MemoryConsolidationDemo:
             # 执行整合
             start_time = time.time()
             consolidation_result = self.memory_tool.execute("consolidate",
-                                                          from_type="working",
-                                                          to_type="episodic",
+                                                          from_type=from_type,
+                                                          to_type=to_type,
                                                           importance_threshold=threshold)
             consolidation_time = time.time() - start_time
             
@@ -169,10 +171,10 @@ class MemoryConsolidationDemo:
             print(f"整合后状态: {stats_after}")
             
             # 查看整合后的情景记忆
-            print(f"\n📚 整合后的情景记忆:")
+            print(f"\n📚 整合后的{to_type}记忆:")
             episodic_search = self.memory_tool.execute("search",
                                                      query="",
-                                                     memory_type="episodic",
+                                                     memory_type=to_type,
                                                      limit=5)
             print(episodic_search)
     
@@ -308,7 +310,7 @@ class MemoryConsolidationDemo:
             type_summary = self.memory_tool.execute("search",
                                                    query="",
                                                    memory_type=memory_type,
-                                                   limit=3)
+                                                   limit=30)
             print(type_summary)
         
         # 演示整合后的检索效果
@@ -323,7 +325,7 @@ class MemoryConsolidationDemo:
             print(f"\n查询: '{query}' ({description})")
             result = self.memory_tool.execute("search",
                                             query=query,
-                                            limit=3)
+                                            limit=10)
             print(result)
 
 def main():
@@ -383,3 +385,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+TODO:
+- 完善demonstrate_consolidation_criteria 方法
+- demonstrate_consolidation_process 方法报错: 整合结果: ❌ 整合记忆失败: 'Episode' object has no attribute 'metadata'
+"""
