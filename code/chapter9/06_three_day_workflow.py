@@ -12,8 +12,10 @@ CodebaseMaintainer 三天工作流演示
 import os
 # 配置嵌入模型（三选一）
 # 方案一：TF-IDF（最简单，无需额外依赖）
-# os.environ['EMBED_MODEL_TYPE'] = 'tfidf'
-# os.environ['EMBED_MODEL_NAME'] = ''  # 重要：必须清空，否则会传递不兼容的参数
+os.environ['EMBED_MODEL_TYPE'] = 'tfidf'
+os.environ['EMBED_MODEL_NAME'] = ''  # 重要：必须清空，否则会传递不兼容的参数
+from dotenv import load_dotenv
+load_dotenv()
 # 方案二：本地Transformer（需要: pip install sentence-transformers 和 HF token）
 # os.environ['EMBED_MODEL_TYPE'] = 'local'
 # os.environ['EMBED_MODEL_NAME'] = 'sentence-transformers/all-MiniLM-L6-v2'
@@ -157,7 +159,7 @@ def demonstrate_cross_session_continuity():
     maintainer_1 = CodebaseMaintainer(
         project_name="demo_codebase",
         #实际使用的时候替换代码路径
-        codebase_path="./codebase",
+        codebase_path="/Users/suntao/Documents/GitHub/hello-agents/code/chapter9/codebase",
         llm=HelloAgentsLLM()
     )
 
@@ -180,7 +182,7 @@ def demonstrate_cross_session_continuity():
     maintainer_2 = CodebaseMaintainer(
         project_name="demo_codebase",  # 同一个项目
         #实际使用的时候替换代码路径
-        codebase_path="./codebase",
+        codebase_path="/Users/suntao/Documents/GitHub/hello-agents/code/chapter9/codebase",
         llm=HelloAgentsLLM()
     )
 
@@ -214,8 +216,8 @@ def demonstrate_tool_synergy():
     maintainer = CodebaseMaintainer(
         project_name="synergy_demo",
         #实际使用的时候替换代码路径
-        codebase_path="./codebase",
-        llm=HelloAgentsLLM(provider="custom")
+        codebase_path="/Users/suntao/Documents/GitHub/hello-agents/code/chapter9/codebase",
+        llm=HelloAgentsLLM()
     )
 
     # Agent 自主分析并记录
@@ -262,8 +264,8 @@ def main():
     maintainer = CodebaseMaintainer(
         project_name="demo_codebase",
         #实际使用的时候替换代码路径
-        codebase_path="./codebase",
-        llm=HelloAgentsLLM(provider="custom")
+        codebase_path="/Users/suntao/Documents/GitHub/hello-agents/code/chapter9/codebase",
+        llm=HelloAgentsLLM()
     )
 
     # 执行三天工作流
