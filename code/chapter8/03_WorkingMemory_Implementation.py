@@ -11,8 +11,7 @@ from typing import List, Dict, Any
 from hello_agents.tools import MemoryTool
 from hello_agents.memory import MemoryItem
 from dotenv import load_dotenv
-
-load_dotenv(override=True)
+load_dotenv()
 
 class WorkingMemoryDemo:
     """工作记忆演示类"""
@@ -38,25 +37,27 @@ class WorkingMemoryDemo:
         print(f"\n📝 添加测试记忆...")
         for i in range(10):
             importance = 0.3 + (i * 0.07)  # 递增重要性
-            self.memory_tool.execute("add",
-                content=f"工作记忆测试项目 {i+1} - 重要性 {importance:.2f}",
-                memory_type="working",
-                importance=importance,
-                test_id=i+1,
-                category="capacity_test"
-            )
+            self.memory_tool.run({
+                "action":"add",
+                "content":f"工作记忆测试项目 {i+1} - 重要性 {importance:.2f}",
+                "memory_type":"working",
+                "importance":importance,
+                "test_id":i+1,
+                "category":"capacity_test"
+            })
         
         # 查看当前状态
-        stats = self.memory_tool.execute("stats")
+        stats = self.memory_tool.run({"action":"stats"})
         print(f"当前状态: {stats}")
         
         # 演示重要性排序
         print(f"\n🔍 按重要性搜索:")
-        result = self.memory_tool.execute("search", 
-            query="测试项目", 
-            memory_type="working",
-            limit=5
-        )
+        result = self.memory_tool.run({
+            "action":"search", 
+            "query":"测试项目", 
+            "memory_type":"working",
+            "limit":5
+        })
         print(result)
     
     def demonstrate_mixed_retrieval_strategy(self):
@@ -102,12 +103,13 @@ class WorkingMemoryDemo:
         for i, memory in enumerate(test_memories):
             content = memory.pop("content")
             importance = memory.pop("importance")
-            self.memory_tool.execute("add",
-                content=content,
-                memory_type="working",
-                importance=importance,
+            self.memory_tool.run({
+                "action":"add",
+                "content":content,
+                "memory_type":"working",
+                "importance":importance,
                 **memory
-            )
+            })
         
         # 测试不同类型的检索
         search_tests = [
@@ -120,11 +122,12 @@ class WorkingMemoryDemo:
         print(f"\n🔍 混合检索测试:")
         for query, description in search_tests:
             print(f"\n查询: '{query}' ({description})")
-            result = self.memory_tool.execute("search",
-                query=query,
-                memory_type="working",
-                limit=2
-            )
+            result = self.memory_tool.run({
+                "action":"search",
+                "query":query,
+                "memory_type":"working",
+                "limit":2
+            })
             print(f"结果: {result}")
     
     def demonstrate_time_decay_mechanism(self):
@@ -148,21 +151,23 @@ class WorkingMemoryDemo:
         
         print(f"\n📝 添加不同时期的记忆...")
         for content, importance, age_category in time_test_memories:
-            self.memory_tool.execute("add",
-                content=content,
-                memory_type="working",
-                importance=importance,
-                age_category=age_category,
-                timestamp_category=age_category
-            )
+            self.memory_tool.run({
+                "action":"add",
+                "content":content,
+                "memory_type":"working",
+                "importance":importance,
+                "age_category":age_category,
+                "timestamp_category":age_category
+            })
         
         # 搜索测试时间衰减效果
         print(f"\n🔍 时间衰减效果测试:")
-        result = self.memory_tool.execute("search",
-            query="学习的内容",
-            memory_type="working",
-            limit=4
-        )
+        result = self.memory_tool.run({
+            "action":"search",
+            "query":"学习的内容",
+            "memory_type":"working",
+            "limit":4
+        })
         print("搜索结果（注意时间因素对排序的影响）:")
         print(result)
     
@@ -178,34 +183,32 @@ class WorkingMemoryDemo:
         print("• 模拟工作记忆的有限容量")
         
         # 获取清理前的状态
-        stats_before = self.memory_tool.execute("stats")
+        stats_before = self.memory_tool.run({"action":"stats"})
         print(f"\n清理前状态: {stats_before}")
         
         # 添加一些低重要性的记忆
         print(f"\n📝 添加低重要性记忆...")
         for i in range(5):
-            self.memory_tool.execute("add",
-                content=f"低重要性临时记忆 {i+1}",
-                memory_type="working",
-                importance=0.1 + i * 0.05,
-                temporary=True,
-                cleanup_test=True
-            )
-            
-        # 添加低重要性的记忆后的状态
-        stats_after = self.memory_tool.execute("stats")
-        print(f"\n添加低重要性的记忆后的状态: {stats_after}")
+            self.memory_tool.run({
+                "action":"add",
+                "content":f"低重要性临时记忆 {i+1}",
+                "memory_type":"working",
+                "importance":0.1 + i * 0.05,
+                "temporary":True,
+                "cleanup_test":True
+            })
         
         # 触发基于重要性的清理
         print(f"\n🧹 执行基于重要性的清理...")
-        cleanup_result = self.memory_tool.execute("forget",
-            strategy="importance_based",
-            threshold=0.8
-        )
+        cleanup_result = self.memory_tool.run({
+            "action":"forget",
+            "strategy":"importance_based",
+            "threshold":0.3
+        })
         print(f"清理结果: {cleanup_result}")
         
         # 获取清理后的状态
-        stats_after = self.memory_tool.execute("stats")
+        stats_after = self.memory_tool.run({"action":"stats"})
         print(f"\n清理后状态: {stats_after}")
     
     def demonstrate_performance_characteristics(self):
@@ -225,28 +228,30 @@ class WorkingMemoryDemo:
         # 批量添加测试
         start_time = time.time()
         for i in range(20):
-            self.memory_tool.execute("add",
-                content=f"性能测试记忆 {i+1}",
-                memory_type="working",
-                importance=0.5,
-                performance_test=True
-            )
+            self.memory_tool.run({
+                "action":"add",
+                "content":f"性能测试记忆 {i+1}",
+                "memory_type":"working",
+                "importance":0.5,
+                "performance_test":True
+            })
         add_time = time.time() - start_time
         print(f"批量添加20条记忆耗时: {add_time:.3f}秒")
         
         # 批量搜索测试
         start_time = time.time()
         for i in range(10):
-            self.memory_tool.execute("search",
-                query=f"性能测试",
-                memory_type="working",
-                limit=3
-            )
+            self.memory_tool.run({
+                "action":"search",
+                "query":f"性能测试",
+                "memory_type":"working",
+                "limit":3
+            })
         search_time = time.time() - start_time
         print(f"批量搜索10次耗时: {search_time:.3f}秒")
         
         # 获取最终统计
-        final_stats = self.memory_tool.execute("stats")
+        final_stats = self.memory_tool.run("stats")
         print(f"\n📊 最终统计: {final_stats}")
 
 def main():
@@ -297,19 +302,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-TODO:
-- 混合检索测试的结果是因为 working memory 是基于TF-IDF 向量相似比较?
-- 时间衰减效果测试的结果为何不是最新的2～4条? 结果没有包含 newest (最新的重要信息 - 刚刚学习的概念) 那条记忆
-```
-🔍 时间衰减效果测试:
-搜索结果（注意时间因素对排序的影响）:
-🔍 找到 2 条相关记忆:
-1. [工作记忆] 较旧的信息 - 上周学习的内容 (重要性: 0.70)
-2. [工作记忆] 较新的信息 - 昨天学习的内容 (重要性: 0.70)
-```
-- 添加低重要性记忆 为何stats 检查记录数没有变化?
-- 基于重要性的清理 10条记忆的importance 应该分别为0.3 0.37 0.44 0.51 0.58 0.65 0.72 0.79 0.86 0.93, 阀值threshold=0.8时，应该清理(forget)8条才对? 
-还是需要根据公式`(相似度 × 时间衰减) × (0.8 + 重要性 × 0.4)`重新计算importance?
-"""

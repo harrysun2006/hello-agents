@@ -8,8 +8,7 @@
 import time
 from hello_agents.tools import RAGTool
 from dotenv import load_dotenv
-
-load_dotenv(override=True)
+load_dotenv()
 
 class AdvancedSearchDemo:
     """高级检索演示类"""
@@ -17,8 +16,7 @@ class AdvancedSearchDemo:
     def __init__(self):
         self.rag_tool = RAGTool(
             knowledge_base_path="./advanced_search_kb",
-            rag_namespace="advanced_search_demo",
-            collection_name="ch8ex05_01"
+            rag_namespace="advanced_search_demo"
         )
         self._setup_knowledge_base()
     
@@ -167,9 +165,9 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
         
         # 批量添加文档
         for doc in tech_documents:
-            result = self.rag_tool.execute("add_text",
-                                         text=doc["content"],
-                                         document_id=doc["id"])
+            result = self.rag_tool.run({"action":"add_text",
+                                         "text":doc["content"],
+                                         "document_id":doc["id"]})
             print(f"✅ 添加文档: {doc['id']}")
         
         print(f"📊 知识库设置完成，共添加 {len(tech_documents)} 个文档")
@@ -197,14 +195,14 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             print(f"\n查询: '{query}' ({description})")
             
             start_time = time.time()
-            result = self.rag_tool.execute("search",
-                                         query=query,
-                                         limit=3,
-                                         enable_advanced_search=False)
+            result = self.rag_tool.run({"action":"search",
+                                         "query":query,
+                                         "limit":2,
+                                         "enable_advanced_search":False})
             search_time = time.time() - start_time
             
             print(f"耗时: {search_time:.3f}秒")
-            print(f"结果: {result[:600]}...")
+            print(f"结果: {result[:200]}...")
     
     def demonstrate_mqe_search(self):
         """演示多查询扩展（MQE）搜索"""
@@ -221,10 +219,6 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             ("深度学习", "测试概念扩展"),
             ("优化算法", "测试技术扩展"),
             ("神经网络", "测试架构扩展")
-            # ("注意力机制", "测试精确概念匹配"),
-            # ("深度学习优化", "测试主题匹配"),
-            # ("图像分类CNN", "测试多词匹配"),
-            # ("机器翻译模型", "测试跨文档匹配")
         ]
         
         print(f"\n🔄 MQE搜索测试:")
@@ -233,24 +227,24 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             
             # 基础搜索对比
             start_time = time.time()
-            basic_result = self.rag_tool.execute("search",
-                                               query=query,
-                                               limit=3,
-                                               enable_advanced_search=False)
+            basic_result = self.rag_tool.run({"action":"search",
+                                               "query":query,
+                                               "limit":3,
+                                               "enable_advanced_search":False})
             basic_time = time.time() - start_time
             
             # MQE搜索
             start_time = time.time()
-            mqe_result = self.rag_tool.execute("search",
-                                             query=query,
-                                             limit=3,
-                                             enable_advanced_search=True)
+            mqe_result = self.rag_tool.run({"action":"search",
+                                             "query":query,
+                                             "limit":3,
+                                             "enable_advanced_search":True})
             mqe_time = time.time() - start_time
             
             print(f"基础搜索耗时: {basic_time:.3f}秒")
             print(f"MQE搜索耗时: {mqe_time:.3f}秒")
-            print(f"基础结果: {basic_result[:600]}...")
-            print(f"MQE结果: {mqe_result[:600]}...")
+            print(f"基础结果: {basic_result[:150]}...")
+            print(f"MQE结果: {mqe_result[:150]}...")
             print(f"性能对比: MQE搜索耗时是基础搜索的 {mqe_time/basic_time:.1f} 倍")
     
     def demonstrate_hyde_search(self):
@@ -276,10 +270,10 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             
             # 使用智能问答（内部使用HyDE）
             start_time = time.time()
-            hyde_result = self.rag_tool.execute("ask",
-                                              question=query,
-                                              limit=3,
-                                              enable_advanced_search=True)
+            hyde_result = self.rag_tool.run({"action":"ask",
+                                              "question":query,
+                                              "limit":3,
+                                              "enable_advanced_search":True})
             hyde_time = time.time() - start_time
             
             print(f"HyDE问答耗时: {hyde_time:.3f}秒")
@@ -310,17 +304,17 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             start_time = time.time()
             
             # 先进行高级搜索获取相关片段
-            search_result = self.rag_tool.execute("search",
-                                                query=query,
-                                                limit=4,
-                                                enable_advanced_search=True)
+            search_result = self.rag_tool.run({"action":"search",
+                                                "query":query,
+                                                "limit":4,
+                                                "enable_advanced_search":True})
             
             # 再进行智能问答生成完整答案
-            qa_result = self.rag_tool.execute("ask",
-                                            question=query,
-                                            limit=4,
-                                            enable_advanced_search=True,
-                                            include_citations=True)
+            qa_result = self.rag_tool.run({"action":"ask",
+                                            "question":query,
+                                            "limit":4,
+                                            "enable_advanced_search":True,
+                                            "include_citations":True})
             
             combined_time = time.time() - start_time
             
@@ -364,10 +358,10 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
             for query in performance_queries:
                 start_time = time.time()
                 
-                result = self.rag_tool.execute("search",
-                                             query=query,
-                                             limit=3,
-                                             **params)
+                result = self.rag_tool.run({"action":"search",
+                                             "query":query,
+                                             "limit":3,
+                                             **params})
                 
                 query_time = time.time() - start_time
                 strategy_times.append(query_time)
@@ -393,7 +387,7 @@ Transformer的核心是自注意力机制（Self-Attention），它允许模型�
         print(f"分析: 高级搜索通过多策略提升检索质量，耗时增加 {((advanced_avg/basic_avg-1)*100):.0f}%")
         
         # 获取系统统计
-        stats = self.rag_tool.execute("stats")
+        stats = self.rag_tool.run({"action":"stats"})
         print(f"\n📊 系统统计: {stats}")
 
 def main():
@@ -450,9 +444,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-TODO:
-- demonstrate_hyde_search 答案似乎没有直接调用 LLM model 返回的答案更全面? 写个简单例子直接比较?
-- demonstrate_combined_advanced_search 答案好像也没有直接调用 LLM model 返回的答案更星系全面? 写个例子分析具体原因?
-"""

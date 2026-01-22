@@ -12,8 +12,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from hello_agents.tools import RAGTool
 from dotenv import load_dotenv
-
-load_dotenv(override=True)
+load_dotenv()
 
 class RAGPipelineComplete:
     """RAG完整处理管道演示类"""
@@ -29,8 +28,7 @@ class RAGPipelineComplete:
         # 初始化RAG工具
         self.rag_tool = RAGTool(
             knowledge_base_path="./rag_pipeline_kb",
-            rag_namespace="complete_pipeline",
-            collection_name="ch8ex10_01"
+            rag_namespace="complete_pipeline"
         )
         
         print("✅ RAG系统初始化完成")
@@ -197,10 +195,10 @@ class RAGPipelineComplete:
         for doc in documents:
             print(f"\n处理文档: {doc['document_id']} ({doc['format']})")
             
-            result = self.rag_tool.execute("add_text",
-                                         text=doc["content"],
-                                         document_id=doc["document_id"],
-                                         **doc["metadata"])
+            result = self.rag_tool.run({"action":"add_text",
+                                         "text":doc["content"],
+                                         "document_id":doc["document_id"],
+                                         **doc["metadata"]})
             print(f"  摄取结果: {result}")
             
             # 显示文档统计
@@ -256,17 +254,17 @@ class RAGPipelineComplete:
         # 批量处理
         start_time = time.time()
         for doc in batch_documents:
-            result = self.rag_tool.execute("add_text",
-                                         text=doc["content"],
-                                         document_id=doc["document_id"],
-                                         **doc["metadata"])
+            result = self.rag_tool.run({"action":"add_text",
+                                         "text":doc["content"],
+                                         "document_id":doc["document_id"],
+                                         **doc["metadata"]})
             print(f"  批量处理 {doc['document_id']}: {result}")
         
         batch_time = time.time() - start_time
         print(f"  批量处理耗时: {batch_time:.3f}秒")
         
         # 获取摄取统计
-        stats = self.rag_tool.execute("stats")
+        stats = self.rag_tool.run({"action":"stats"})
         print(f"\n📊 文档摄取统计: {stats}")
     
     def demonstrate_chunking_strategies(self):
@@ -347,12 +345,12 @@ class RAGPipelineComplete:
 """
         
         # 添加长文档并观察分块效果
-        chunking_result = self.rag_tool.execute("add_text",
-                                               text=long_document,
-                                               document_id="ai_history_long",
-                                               title="人工智能发展史",
-                                               type="historical_overview",
-                                               chunking_strategy="semantic")
+        chunking_result = self.rag_tool.run({"action":"add_text",
+                                               "text":long_document,
+                                               "document_id":"ai_history_long",
+                                               "title":"人工智能发展史",
+                                               "type":"historical_overview",
+                                               "chunking_strategy":"semantic"})
         print(f"长文档分块结果: {chunking_result}")
         
         # 演示不同分块大小的影响
@@ -363,18 +361,17 @@ class RAGPipelineComplete:
             "图灵测试是什么？",
             "深度学习的关键技术突破",
             "AlphaGo的意义",
-            "通用人工智能的未来",
-            "算盘的历史",
+            "通用人工智能的未来"
         ]
         
         for query in test_queries:
             start_time = time.time()
-            results = self.rag_tool.execute("search",
-                                          query=query,
-                                          limit=3)
+            results = self.rag_tool.run({"action":"search",
+                                          "query":query,
+                                          "limit":3})
             search_time = time.time() - start_time
             print(f"  查询: '{query}' ({search_time:.4f}秒)")
-            print(f"  结果: {results[:600]}...")
+            print(f"    结果: {results[:120]}...")
         
         # 演示结构化文档的分块
         print(f"\n3. 结构化文档分块:")
@@ -421,27 +418,26 @@ class RAGPipelineComplete:
 **应用场景**: 数据可视化、特征提取
 """
         
-        structured_result = self.rag_tool.execute("add_text",
-                                                 text=structured_doc,
-                                                 document_id="ml_algorithms_handbook",
-                                                 title="机器学习算法手册",
-                                                 type="reference_manual",
-                                                 structure="hierarchical")
+        structured_result = self.rag_tool.run({"action":"add_text",
+                                                 "text":structured_doc,
+                                                 "document_id":"ml_algorithms_handbook",
+                                                 "title":"机器学习算法手册",
+                                                 "type":"reference_manual",
+                                                 "structure":"hierarchical"})
         print(f"结构化文档分块: {structured_result}")
         
         # 测试结构化检索
         structured_queries = [
             "线性回归的优缺点",
             "K-means聚类算法",
-            "PCA降维原理",
-            "咖啡对睡眠和健康的影响",
+            "PCA降维原理"
         ]
         
         for query in structured_queries:
-            results = self.rag_tool.execute("search",
-                                          query=query,
-                                          limit=2)
-            print(f"  结构化查询 '{query}': {results[:600]}...")
+            results = self.rag_tool.run({"action":"search",
+                                          "query":query,
+                                          "limit":2})
+            print(f"  结构化查询 '{query}': {results[:100]}...")
     
     def demonstrate_advanced_retrieval(self):
         """演示高级检索策略"""
@@ -465,8 +461,7 @@ class RAGPipelineComplete:
             "机器学习模型性能优化方法",
             "提升ML模型准确率的技巧",
             "模型调优和超参数优化",
-            "机器学习模型评估指标",
-            "唐宋诗词的发展"
+            "机器学习模型评估指标"
         ]
         
         print(f"扩展查询:")
@@ -476,11 +471,11 @@ class RAGPipelineComplete:
         # 执行多查询检索
         all_results = []
         for query in [base_query] + expanded_queries:
-            results = self.rag_tool.execute("search",
-                                          query=query,
-                                          limit=3)
+            results = self.rag_tool.run({"action":"search",
+                                          "query":query,
+                                          "limit":3})
             all_results.append((query, results))
-            print(f"  查询结果 '{query[:50]}...': {results[:300]}...")
+            print(f"  查询结果 '{query[:20]}...': {results[:80]}...")
         
         # 演示假设文档嵌入（HyDE）
         print(f"\n2. 假设文档嵌入（HyDE）演示:")
@@ -491,19 +486,19 @@ class RAGPipelineComplete:
         # 生成假设答案
         hypothetical_answer = """深度学习是机器学习的一个子领域，它使用多层神经网络来学习数据的复杂模式。深度学习模型通过多个隐藏层来提取数据的层次化特征表示。常见的深度学习架构包括卷积神经网络（CNN）、循环神经网络（RNN）和Transformer。深度学习在图像识别、自然语言处理、语音识别等领域取得了突破性进展。"""
         
-        print(f"假设答案: {hypothetical_answer[:300]}...")
+        print(f"假设答案: {hypothetical_answer[:100]}...")
         
         # 使用假设答案进行检索
-        hyde_results = self.rag_tool.execute("search",
-                                           query=hypothetical_answer,
-                                           limit=5)
-        print(f"HyDE检索结果: {hyde_results[:320]}...")
+        hyde_results = self.rag_tool.run({"action":"search",
+                                           "query":hypothetical_answer,
+                                           "limit":5})
+        print(f"HyDE检索结果: {hyde_results[:120]}...")
         
         # 对比直接查询结果
-        direct_results = self.rag_tool.execute("search",
-                                             query=user_question,
-                                             limit=5)
-        print(f"直接查询结果: {direct_results[:320]}...")
+        direct_results = self.rag_tool.run({"action":"search",
+                                             "query":user_question,
+                                             "limit":5})
+        print(f"直接查询结果: {direct_results[:120]}...")
         
         # 演示混合检索策略
         print(f"\n3. 混合检索策略演示:")
@@ -523,12 +518,12 @@ class RAGPipelineComplete:
         print(f"查询分解:")
         mixed_results = {}
         for sub_query in sub_queries:
-            results = self.rag_tool.execute("search",
-                                          query=sub_query,
-                                          limit=2)
+            results = self.rag_tool.run({"action":"search",
+                                          "query":sub_query,
+                                          "limit":2})
             mixed_results[sub_query] = results
             print(f"  子查询: {sub_query}")
-            print(f"    结果: {results[:500]}...")
+            print(f"    结果: {results[:80]}...")
         
         # 演示相关性重排序
         print(f"\n4. 相关性重排序演示:")
@@ -537,10 +532,10 @@ class RAGPipelineComplete:
         print(f"排序查询: {ranking_query}")
         
         # 获取初始结果
-        initial_results = self.rag_tool.execute("search",
-                                              query=ranking_query,
-                                              limit=8)
-        print(f"初始检索结果: {initial_results[:500]}...")
+        initial_results = self.rag_tool.run({"action":"search",
+                                              "query":ranking_query,
+                                              "limit":8})
+        print(f"初始检索结果: {initial_results[:150]}...")
         
         # 模拟重排序过程（基于多个因素）
         print(f"重排序因素:")
@@ -549,10 +544,10 @@ class RAGPipelineComplete:
         print(f"  • 文档权威性权重: 0.2")
         
         # 最终排序结果
-        final_results = self.rag_tool.execute("search",
-                                            query=ranking_query,
-                                            limit=5)
-        print(f"重排序后结果: {final_results[:500]}...")
+        final_results = self.rag_tool.run({"action":"search",
+                                            "query":ranking_query,
+                                            "limit":5})
+        print(f"重排序后结果: {final_results[:150]}...")
     
     def demonstrate_intelligent_qa(self):
         """演示智能问答生成"""
@@ -603,12 +598,12 @@ class RAGPipelineComplete:
             
             # 执行问答
             start_time = time.time()
-            answer = self.rag_tool.execute("ask",
-                                         question=example["question"],
-                                         limit=4)
+            answer = self.rag_tool.run({"action":"ask",
+                                         "question":example["question"],
+                                         "limit":4})
             qa_time = time.time() - start_time
             
-            print(f"回答 ({qa_time:.3f}秒): {answer[:500]}...")
+            print(f"回答 ({qa_time:.3f}秒): {answer[:200]}...")
         
         # 演示上下文构建过程
         print(f"\n2. 上下文构建过程演示:")
@@ -624,16 +619,16 @@ class RAGPipelineComplete:
         print(f"  4. 上下文排序 - 按相关性和重要性排序")
         
         # 执行上下文构建
-        context_search = self.rag_tool.execute("search",
-                                             query="神经网络过拟合防止方法",
-                                             limit=6)
-        print(f"  检索到的上下文: {context_search[:500]}...")
+        context_search = self.rag_tool.run({"action":"search",
+                                             "query":"神经网络过拟合防止方法",
+                                             "limit":6})
+        print(f"  检索到的上下文: {context_search[:180]}...")
         
         # 生成最终答案
-        final_answer = self.rag_tool.execute("ask",
-                                           question=context_question,
-                                           limit=5)
-        print(f"  最终答案: {final_answer[:500]}...")
+        final_answer = self.rag_tool.run({"action":"ask",
+                                           "question":context_question,
+                                           "limit":5})
+        print(f"  最终答案: {final_answer[:250]}...")
         
         # 演示多轮对话支持
         print(f"\n3. 多轮对话支持:")
@@ -655,10 +650,10 @@ class RAGPipelineComplete:
             else:
                 context_query = question
             
-            answer = self.rag_tool.execute("ask",
-                                         question=context_query,
-                                         limit=3)
-            print(f"  回答: {answer[:500]}...")
+            answer = self.rag_tool.run({"action":"ask",
+                                         "question":context_query,
+                                         "limit":3})
+            print(f"  回答: {answer[:150]}...")
         
         # 演示答案质量评估
         print(f"\n4. 答案质量评估:")
@@ -666,11 +661,11 @@ class RAGPipelineComplete:
         quality_question = "解释反向传播算法的工作原理"
         print(f"评估问题: {quality_question}")
         
-        answer = self.rag_tool.execute("ask",
-                                     question=quality_question,
-                                     limit=5)
+        answer = self.rag_tool.run({"action":"ask",
+                                     "question":quality_question,
+                                     "limit":5})
         
-        print(f"生成答案: {answer[:500]}...")
+        print(f"生成答案: {answer[:300]}...")
         
         # 模拟质量评估指标
         quality_metrics = {
@@ -714,9 +709,9 @@ class RAGPipelineComplete:
         
         for i, query in enumerate(performance_queries, 1):
             start_time = time.time()
-            results = self.rag_tool.execute("search",
-                                          query=query,
-                                          limit=5)
+            results = self.rag_tool.run({"action":"search",
+                                          "query":query,
+                                          "limit":5})
             query_time = time.time() - start_time
             total_time += query_time
             
@@ -743,7 +738,7 @@ class RAGPipelineComplete:
         start_time = time.time()
         individual_results = []
         for query in batch_queries:
-            result = self.rag_tool.execute("search", query=query, limit=2)
+            result = self.rag_tool.run({"action":"search", "query":query, "limit":2})
             individual_results.append(result)
         individual_time = time.time() - start_time
         
@@ -753,7 +748,7 @@ class RAGPipelineComplete:
         start_time = time.time()
         batch_results = []
         for query in batch_queries:
-            result = self.rag_tool.execute("search", query=query, limit=2)
+            result = self.rag_tool.run({"action":"search", "query":query, "limit":2})
             batch_results.append(result)
         batch_time = time.time() - start_time
         
@@ -767,17 +762,17 @@ class RAGPipelineComplete:
         
         # 第一次查询（无缓存）
         start_time = time.time()
-        first_result = self.rag_tool.execute("search",
-                                           query=cache_query,
-                                           limit=3)
+        first_result = self.rag_tool.run({"action":"search",
+                                           "query":cache_query,
+                                           "limit":3})
         first_time = time.time() - start_time
         print(f"  首次查询: {first_time:.4f}秒")
         
         # 第二次查询（可能有缓存）
         start_time = time.time()
-        second_result = self.rag_tool.execute("search",
-                                            query=cache_query,
-                                            limit=3)
+        second_result = self.rag_tool.run({"action":"search",
+                                            "query":cache_query,
+                                            "limit":3})
         second_time = time.time() - start_time
         print(f"  重复查询: {second_time:.4f}秒")
         
@@ -789,7 +784,7 @@ class RAGPipelineComplete:
         print(f"\n4. 系统监控:")
         
         # 获取系统统计
-        system_stats = self.rag_tool.execute("stats")
+        system_stats = self.rag_tool.run({"action":"stats"})
         print(f"  系统统计: {system_stats}")
         
         # 模拟资源使用监控
@@ -860,6 +855,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-"""

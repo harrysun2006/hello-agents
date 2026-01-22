@@ -10,20 +10,17 @@ import time
 import tempfile
 from hello_agents.tools import RAGTool
 from dotenv import load_dotenv
-
-load_dotenv(override=True)
+load_dotenv()
 
 class MarkItDownPipelineDemo:
     """MarkItDown处理管道演示类"""
     
     def __init__(self):
-        self.base_dir = "./demo_rag_kb"
         self.rag_tool = RAGTool(
-            knowledge_base_path=self.base_dir,
-            rag_namespace="markitdown_demo",
-            collection_name="ch8ex04_01"
+            knowledge_base_path="./demo_rag_kb",
+            rag_namespace="markitdown_demo"
         )
-        # self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = tempfile.mkdtemp()
     
     def create_sample_documents(self):
         """创建多格式示例文档"""
@@ -130,7 +127,7 @@ class Person:
         
         file_paths = {}
         for filename, content in documents.items():
-            file_path = os.path.join(self.base_dir, filename)
+            file_path = os.path.join(self.temp_dir, filename)
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
             file_paths[filename] = file_path
@@ -158,8 +155,8 @@ class Person:
             start_time = time.time()
             
             # 使用RAGTool添加文档，内部会调用MarkItDown
-            result = self.rag_tool.execute("add_document", 
-                                         file_path=file_path)
+            result = self.rag_tool.run({"action":"add_document", 
+                                         "file_path":file_path})
             
             process_time = time.time() - start_time
             
@@ -250,11 +247,11 @@ class Person:
 """
         
         print(f"\n📝 添加复杂Markdown文档进行分块测试...")
-        result = self.rag_tool.execute("add_text",
-                                     text=complex_markdown,
-                                     document_id="ai_tech_stack",
-                                     chunk_size=400,
-                                     chunk_overlap=100)
+        result = self.rag_tool.run({"action":"add_text",
+                                     "text":complex_markdown,
+                                     "document_id":"ai_tech_stack",
+                                     "chunk_size":800,
+                                     "chunk_overlap":100})
         
         print(f"分块结果: {result}")
         
@@ -270,10 +267,10 @@ class Person:
         
         for query, description in search_queries:
             print(f"\n查询: '{query}' ({description})")
-            search_result = self.rag_tool.execute("search",
-                                                query=query,
-                                                limit=3)
-            print(f"检索结果: {search_result[:500]}...")
+            search_result = self.rag_tool.run({"action":"search",
+                                                "query":query,
+                                                "limit":2})
+            print(f"检索结果: {search_result[:200]}...")
     
     def demonstrate_embedding_optimization(self):
         """演示面向嵌入的Markdown预处理"""
@@ -306,17 +303,17 @@ def process_data(data):
         print(raw_markdown)
         
         # 添加到RAG系统，内部会进行预处理
-        result = self.rag_tool.execute("add_text",
-                                     text=raw_markdown,
-                                     document_id="preprocessing_demo")
+        result = self.rag_tool.run({"action":"add_text",
+                                     "text":raw_markdown,
+                                     "document_id":"preprocessing_demo"})
         
         print(f"\n✅ 预处理并添加完成: {result}")
         
         # 测试预处理后的检索效果
         print(f"\n🔍 测试预处理后的检索效果:")
-        search_result = self.rag_tool.execute("search",
-                                            query="Python函数处理数据",
-                                            limit=1)
+        search_result = self.rag_tool.run({"action":"search",
+                                            "query":"Python函数处理数据",
+                                            "limit":1})
         print(f"检索结果: {search_result}")
     
     def demonstrate_pipeline_performance(self):
@@ -353,7 +350,7 @@ def process_data(data):
         print(f"平均每文档: {batch_time/10:.3f}秒")
         
         # 获取最终统计
-        stats = self.rag_tool.execute("stats")
+        stats = self.rag_tool.run({"action":"stats"})
         print(f"\n📊 最终统计: {stats}")
 
 def main():
@@ -398,9 +395,9 @@ def main():
         print("• 检索优化 - 为向量检索优化的文本表示")
         
         # 清理临时文件
-        # import shutil
-        # shutil.rmtree(demo.base_dir)
-        # print(f"\n🧹 清理临时文件: {demo.base_dir}")
+        import shutil
+        shutil.rmtree(demo.temp_dir)
+        print(f"\n🧹 清理临时文件: {demo.temp_dir}")
         
     except Exception as e:
         print(f"\n❌ 演示过程中发生错误: {e}")
@@ -409,43 +406,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-TODO:
-- 混合检索测试的结果是因为 working memory 是基于TF-IDF 向量相似比较?
-- 时间衰减效果测试的结果为何不是最新的2～4条? 结果没有包含 newest (最新的重要信息 - 刚刚学习的概念) 那条记忆
-
-🔍 时间衰减效果测试:
-搜索结果（注意时间因素对排序的影响）:
-🔍 找到 2 条相关记忆:
-1. [工作记忆] 较旧的信息 - 上周学习的内容 (重要性: 0.70)
-2. [工作记忆] 较新的信息 - 昨天学习的内容 (重要性: 0.70)
-- 添加低重要性记忆 为何stats 检查记录数没有变化?
-- 执行基于重要性的清理 10条记忆的importance 应该分别为0.3 0.37 0.44 0.51 0.58 0.65 0.72 0.79 0.86 0.93, 
-阀值threshold=0.8时，应该清理(forget)8条才对? 还是需要根据公式`(相似度 × 时间衰减) × (0.8 + 重要性 × 0.4)`重新计算importance?
-
-
-- demonstrate_markdown_chunking 中的检索不准确, 尝试 Qdrant collection 使用 distance =  "Euclid" 以及其他参数?
-```
-search `BERT GPT` 返回:
-神经元：基本计算单元... (相似度: 0.617)
-监督学习使用标注数据训练模型... (相似度: 0.539)
-
-search `聚类降维` 返回:
-监督学习使用标注数据训练模型... (相似度: 0.625)
-神经元：基本计算单元... (相似度: 0.528)
-```
-- demonstrate_embedding_optimization 添加 markdown 文本后 search 检索效果及处理逻辑??
-... ...
-更多信息请参考[官方文档](https://docs.python.org)。
-
-*注意*：这个函数会`自动过滤`空值。...
-   章节: 代码示例
-
-查看[rag_tool.py源码](https://github.com/jjyaoao/HelloAgents/blob/main/hello_agents/tools/builtin/rag_tool.py#L422-L424)
-```python
-if include_citations and meta.get("heading_path"):
-    clean_heading = clean_text(str(meta['heading_path']))
-    search_result.append(f"   章节: {clean_heading}")
-```
-"""
