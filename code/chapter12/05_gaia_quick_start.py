@@ -14,6 +14,9 @@
 import os
 from hello_agents import SimpleAgent, HelloAgentsLLM
 from hello_agents.tools import GAIAEvaluationTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # GAIA官方系统提示词（必须使用）
 GAIA_SYSTEM_PROMPT = """You are a general AI assistant. I will ask you a question. Report your thoughts, and finish your answer with the following template: FINAL ANSWER: [YOUR FINAL ANSWER].
@@ -40,16 +43,16 @@ gaia_tool = GAIAEvaluationTool()
 results = gaia_tool.run(
     agent=agent,
     level=1,              # 评估级别（1=简单，2=中等，3=困难）
-    max_samples=2,        # 评估样本数（0表示全部）
+    max_samples=10,       # 评估样本数（0表示全部）
     export_results=True,  # 导出结果到GAIA官方格式
     generate_report=True  # 生成详细报告
 )
 
 # 5. 查看结果
-print(f"\n评估结果:")
-print(f"精确匹配率: {results['exact_match_rate']:.2%}")
-print(f"部分匹配率: {results['partial_match_rate']:.2%}")
-print(f"正确数: {results['correct_samples']}/{results['total_samples']}")
+print(f"\n评估结果: {results}")
+print(f"精确匹配率: {(results['exact_matches']/results['total_samples']):.2%}")
+print(f"部分匹配率: {(results['partial_matches']/results['total_samples']):.2%}")
+print(f"正确数: {results['exact_matches'] + results['partial_matches']}/{results['total_samples']}")
 
 # 运行输出示例：
 # ============================================================

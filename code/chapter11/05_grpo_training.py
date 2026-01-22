@@ -42,9 +42,9 @@ def minimal_grpo_training():
     print(f"  训练轮数: {config['num_epochs']}")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ 训练完成! 模型保存在: {result_dict['output_dir']}")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ 训练完成! 模型保存在: {result_dict['output_dir']}")
     
     return config
 
@@ -91,9 +91,9 @@ def standard_grpo_training():
     print(f"  learning_rate: {config['learning_rate']} (比SFT小)")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ GRPO训练完成!")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ GRPO训练完成! {result}")
     
     return config
 
@@ -132,7 +132,7 @@ def full_dataset_training():
     print(f"  预计样本数: ~7500 (GSM8K训练集)")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
+    result = tool.run(config)
     
     return config
 
@@ -168,8 +168,8 @@ def complete_sft_grpo_pipeline():
     print(f"  样本数: {sft_config['max_samples']}")
     
     # 实际训练时取消注释
-    # sft_result = tool.run(sft_config)
-    # print(f"✅ SFT训练完成: {sft_config['output_dir']}")
+    sft_result = tool.run(sft_config)
+    print(f"✅ SFT训练完成: {sft_config['output_dir']}")
     
     # 步骤2: GRPO训练
     print("\n步骤2: GRPO训练")
@@ -189,8 +189,8 @@ def complete_sft_grpo_pipeline():
     print(f"  样本数: {grpo_config['max_samples']}")
     
     # 实际训练时取消注释
-    # grpo_result = tool.run(grpo_config)
-    # print(f"✅ GRPO训练完成: {grpo_config['output_dir']}")
+    grpo_result = tool.run(grpo_config)
+    print(f"✅ GRPO训练完成: {grpo_config['output_dir']}")
     
     print("\n💡 推荐使用GRPO模型进行推理")
     
@@ -289,10 +289,10 @@ def practical_training_example():
     print("# print(f'✅ 训练完成! 模型保存在: {result_dict[\"output_dir\"]}')")
     
     # 实际训练时取消注释
-    # result = tool.run(config)
-    # result_dict = json.loads(result)
-    # print(f"\n✅ 训练完成!")
-    # print(f"📁 模型保存在: {result_dict['output_dir']}")
+    result = tool.run(config)
+    result_dict = json.loads(result)
+    print(f"\n✅ 训练完成!")
+    print(f"📁 模型保存在: {result_dict['output_dir']}")
     
     return config
 

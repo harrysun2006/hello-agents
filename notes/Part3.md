@@ -1109,18 +1109,158 @@ LoRA 的关键超参数包括:
 - **平均奖励(Average Reward)**: 所有样本的平均奖励，综合考虑准确率、长度、步骤等因素，范围取决于奖励函数设计。
 - **推理质量(Reasoning Quality)**: 推理过程的清晰度和逻辑性，需要人工评估或使用专门的评估模型。
 
-<center>模型准确率对比</center>
+<center>模型准确率对比 (100个评估样本) </center>
 
 | 模型                | LoRA   | 预训练参数       | 准确度    |
 |--------------------|--------|-----------------|----------|
 | Qwen/Qwen3-0.6B    | false  | N/A             |   3.00%  |
-| sft-full           |  true  | r=16, alpha=32  |  28.00%  |
-| sft-full2          |  true  | r=16, alpha=32  |  39.00%  |
+| sft_standard       |  true  | r=16, alpha=32  |  29.00%  |
+| sft_full           |  true  | r=16, alpha=32  |  28.00%  |
+| sft_full2          |  true  | r=16, alpha=32  |  39.00%  |
+| grpo_standard??    |  true  | r=16, alpha=32  |   0.00%  |
 
 sft-full2: "lora_target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"]
+grpo_standard, grpo_full: 训练有问题 ?! response 都是重复字符串，如votes..., 222...; 准确率都是0! 重新训练后还是 0??!!
 
-# 预训练模型准确率: 3.00%
-# SFT模型准确率: 28.00%
+```bash
+## 检查 tensorflow 是否安装正确
+python -c "import tensorflow as tf; print(tf.__version__)"
+python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+
+## 彻底重新安装 tensorflow
+# 1. 完全卸载 TensorFlow + CUDA 相关包
+micromamba remove -y tensorflow tensorflow-base tensorflow-estimator libtensorflow_cc libtensorflow_framework cudnn cuda-cudart cuda-nvcc  cuda-libraries cuda-version
+
+# 2. 确认已清空
+micromamba list | egrep "tensorflow|cuda|cudnn" || echo "clean"
+
+# 3. 清理 Python 侧残留（重要）
+rm -rf ~/micromamba/envs/v3.12/lib/python3.12/site-packages/tensorflow* ~/micromamba/envs/v3.12/lib/python3.12/site-packages/*tensorflow*.dist-info
+
+# 4. 重新安装 CUDA runtime（conda-forge）
+micromamba install -c conda-forge cuda-version=12.9 cudnn -y
+
+# 5. 安装 TensorFlow（GPU）
+micromamba install -c conda-forge tensorflow -y
+
+## 解决 *.so: cannot enable executable stack as shared object requires: Invalid argument 问题
+# 1. 检查 GNU_STACK
+readelf -W -l /home/harry/micromamba/envs/v3.12.12/lib/python3.12/site-packages/tensorflow/libtensorflow_cc.so.2 | grep GNU_STACK
+
+readelf -W -l $(dirname $(which python))/../lib/libtensorflow_cc.so.2 | grep GNU_STACK
+#   GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RWE 0x10
+
+# 2. 清除 GNU_STACK E flag
+patchelf --clear-execstack /home/harry/micromamba/envs/v3.12.12/lib/python3.12/site-packages/tensorflow/libtensorflow_cc.so.2
+
+patchelf --clear-execstack $(dirname $(which python))/../lib/libtensorflow_cc.so.2
+
+readelf -W -l /home/harry/micromamba/envs/v3.12.12/lib/python3.12/site-packages/tensorflow/libtensorflow_cc.so.2 | grep GNU_STACK
+#   GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x10
+
+# 3. 相同方法检查处理 _pywrap_tensorflow_interpreter_wrapper.so
+patchelf --clear-execstack /home/harry/micromamba/envs/v3.12.12/lib/python3.12/site-packages/tensorflow/lite/python/interpreter_wrapper/_pywrap_tensorflow_interpreter_wrapper.so
+
+readelf -W -l $(dirname $(which python))/../lib/python3.12/site-packages/tensorflow/lite/python/interpreter_wrapper/_pywrap_tensorflow_interpreter_wrapper.so | grep GNU_STACK
+
+patchelf --clear-execstack $(dirname $(which python))/../lib/python3.12/site-packages/tensorflow/lite/python/interpreter_wrapper/_pywrap_tensorflow_interpreter_wrapper.so
+
+# 验证 GPU 是否可用
+python - <<'EOF'
+import tensorflow as tf
+print("TF version:", tf.__version__)
+print("GPUs:", tf.config.list_physical_devices("GPU"))
+EOF
+
+# 检查 CUDA / cuDNN 版本信息
+python - <<'EOF'
+from tensorflow.python.platform import build_info as bi
+print("Build info dictionary:", bi.build_info)
+print("CUDA version:", bi.build_info['cuda_version'])
+print("cuDNN version:", bi.build_info['cudnn_version'])
+EOF
+
+## 修复 torch, trl,  问题
+micromamba remove -y pytorch torch torchvision torchaudio
+python -m pip uninstall -y torch torchvision torchaudio || true
+micromamba install -y -c conda-forge pytorch==2.8.0 
+# micromamba install -y -c conda-forge transformers==4.51.3 trl==0.19.0
+micromamba install -y -c conda-forge transformers==4.57.3 trl==0.26.2
+# micromamba install -y -c conda-forge trl==0.26.2
+# 重新用 pip 安装 tf-keras 问题解决!
+micromamba remove -y tf-keras
+pip install tf-keras
+micromamba list | egrep 'torch|trl|transformers|keras|tensorflow'
+###
+keras                   3.12.0   pyh753f3f9_0                    conda-forge
+libtorch                2.8.0    cuda129_mkl_hf53477d_302        conda-forge
+pytorch                 2.8.0    cuda129_mkl_py312_had1c889_302  conda-forge
+sentence-transformers   5.1.1    pyhd8ed1ab_0                    conda-forge
+tf_keras                2.20.1   pypi_0                          pypi
+transformers            4.51.3   pyhd8ed1ab_0                    conda-forge
+trl                     0.19.0   pyhd8ed1ab_0                    conda-forge
+libtensorflow_cc        2.19.1   cuda129h19f333e_252             conda-forge
+libtensorflow_framework 2.19.1   cuda129h775b7a8_252             conda-forge
+tensorflow              2.19.1   cuda129py312ha3fd0c4_252        conda-forge
+tensorflow-base         2.19.1   cuda129py312h59614e2_252        conda-forge
+tensorflow-estimator    2.19.1   cuda129py312h813c257_252        conda-forge
+###
+
+# 验证 torch + transformer + trl 版本下 GRPO 相关类能正常工作
+python -c "from trl import GRPOConfig, GRPOTrainer; print('ok')"
+
+# 确认 torch 正确安装
+python - <<'EOF'
+import torch, sys
+print("torch module file:", getattr(torch, "__file__", None))
+print("torch module path:", getattr(torch, "__path__", None))
+print("sys.executable:", sys.executable)
+print("torch dir has Tensor?", hasattr(torch, "Tensor"))
+print("torch version:", getattr(torch, "__version__", None))
+EOF
+
+python -c "import torch;device='cuda' if torch.cuda.is_available() else 'cpu';print(f'Found device: {device}, {torch.cuda.is_available()}, {torch.cuda.get_device_name(0)}')"
+
+## 重装 pytorch
+# 清理可能的 CPU 版 torch（可选但推荐）
+micromamba remove -y pytorch torch torchvision torchaudio
+
+### 使用 pip 安装不容易踩坑!!!
+pip install torch==2.9.1 torchaudio==2.9.1 torchvision==0.24.1
+pip install torch torchaudio torchvision trl transformers peft
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# 安装 CUDA 版 PyTorch（pytorch-cuda 来自 nvidia channel）
+# micromamba install -y --override-channels -c pytorch -c nvidia pytorch torchvision torchaudio pytorch-cuda=12.1
+
+# micromamba install -y -c conda-forge intel-openmp mkl mkl-include
+
+# 这两个环境变量貌似没什么用
+export TRANSFORMERS_NO_TF=1
+export TRANSFORMERS_NO_FLAX=1
+
+python - <<'PY'
+import os
+os.environ["TRANSFORMERS_NO_TF"]="1"
+os.environ["TRANSFORMERS_NO_FLAX"]="1"
+from trl import GRPOConfig, GRPOTrainer
+print("GRPO import OK")
+PY
+
+micromamba install -c conda-forge tensorflow==2.20.0 trl datasets protobuf==5.28.3
+micromamba install -c conda-forge protobuf==5.28.3
+```
+
+如果你的目标是：**同一个 Python 版本里尽量“少踩坑”地同时兼容 torch / tensorflow / keras / tf-keras / trl / protobuf 等一堆生态包**，我最推荐的是：
+
+✅ 首选：Python 3.11（建议 3.11.9 或 3.11.10）
+即使选了最稳的 Python 3.11，我仍然强烈建议你：
+**把 PyTorch/TRL 和 TensorFlow/Keras 分成两个虚拟环境**（同一个 Python 版本也行），原因是它们经常在 **protobuf / keras / 依赖树** 上互相“拉扯”。
+
+* `py311-torch`：torch + transformers + trl + accelerate + peft（不装 TF/keras）
+* `py311-tf`：tensorflow + keras（不要装 trl/transformers 里那些会引 TF 的组合）
+
+这样会比“一个环境大一统”省非常多时间。
 
 ### 11.4 GRPO 训练
 #### 11.4.1 从 PPO 到 GRPO
@@ -1233,7 +1373,7 @@ HelloAgents 集成了两种主流的训练监控工具:Weights & Biases(wandb)�
 ### 11.6 完整训练流程实战
 
 #### 11.6.1 端到端训练流程
-![端到端训练流程](../docs/images/11-figures/)
+![端到端训练流程](../docs/images/11-figures/11-9.png)
 <center>图 11.9 端到端训练流程</center>
 
 运行小建议：
@@ -1284,3 +1424,316 @@ HelloAgents 集成了两种主流的训练监控工具:Weights & Biases(wandb)�
 (3) API 服务
 
 ### 11.8 本章小结
+
+<strong>（1）Agentic RL 的本质</strong>
+
+Agentic RL 是将 LLM 作为可学习策略，嵌入到智能体的感知-决策-执行循环中，通过强化学习优化智能体在多步任务中的表现。它与传统的 PBRFT(Preference-Based Reinforcement Fine-Tuning)的核心区别在于:
+
+- <strong>任务性质</strong>:从单轮对话优化扩展到多步序贯决策
+- <strong>状态空间</strong>:从静态提示扩展到动态演化的环境状态
+- <strong>行动空间</strong>:从纯文本生成扩展到文本+工具+环境操作
+- <strong>奖励设计</strong>:从单步质量评估扩展到长期累积回报
+- <strong>优化目标</strong>:从短期响应质量扩展到长期任务成功
+
+<strong>（2）六大核心能力</strong>
+
+Agentic RL 旨在提升智能体的六大核心能力:
+
+1. <strong>推理(Reasoning)</strong>:多步逻辑推导，学习推理策略
+2. <strong>工具使用(Tool Use)</strong>:API/工具调用，学会何时用、如何用
+3. <strong>记忆(Memory)</strong>:长期信息保持，学习记忆管理
+4. <strong>规划(Planning)</strong>:行动序列规划，学会动态规划
+5. <strong>自我改进(Self-Improvement)</strong>:自我反思优化，从错误中学习
+6. <strong>感知(Perception)</strong>:多模态理解，视觉推理和工具使用
+
+<strong>（3）训练流程</strong>
+
+完整的 Agentic RL 训练流程包括:
+
+1. <strong>预训练(Pretraining)</strong>:在大规模文本上学习语言知识(通常使用现成的预训练模型)
+2. <strong>监督微调(SFT)</strong>:学习任务格式和基础推理能力
+3. <strong>强化学习(RL)</strong>:通过试错优化推理策略，超越训练数据质量
+
+其中，SFT 是基础，RL 是提升。没有 SFT 的基础，RL 很难成功;没有 RL 的优化，模型只能模仿训练数据。
+
+如果你想深入学习 Agentic RL，建议按照以下路径:
+
+基础阶段
+
+1. <strong>强化学习基础</strong>:学习 MDP、策略梯度、PPO 等基本概念
+2. <strong>LLM 基础</strong>:了解 Transformer、预训练、微调等技术
+3. <strong>实践 HelloAgents</strong>:运行本章的示例代码，理解完整流程
+
+进阶阶段
+
+1. <strong>深入 TRL</strong>:学习 TRL 库的实现，理解 SFT 和 GRPO 等算法的细节
+2. <strong>自定义数据集</strong>:使用自己的数据集训练模型
+3. <strong>自定义奖励函数</strong>:设计适合自己任务的奖励函数
+4. <strong>参数调优</strong>:系统地调优超参数，提升模型性能
+
+高级阶段
+
+1. <strong>多步推理</strong>:研究长序列推理任务
+2. <strong>工具学习</strong>:让智能体学会使用工具
+3. <strong>多智能体</strong>:研究多智能体协作
+4. <strong>前沿论文</strong>:阅读最新的研究论文，跟进前沿进展
+
+### TODO: 例子程序运行问题与排错
+- [00_quick_test.py](../code/chapter11/00_quick_test.py)
+- [01_dataset_loading.py](../code/chapter11/01_dataset_loading.py)
+- [02_reward_functions.py](../code/chapter11/02_reward_functions.py)
+- [03_lora_configuration.py](../code/chapter11/03_lora_configuration.py)
+- [04_sft_training.py](../code/chapter11/04_sft_training.py)
+- [05_grpo_training.py](../code/chapter11/05_grpo_training.py): 修复 GRPO 模型训练问题!!!
+- [06_complete_pipeline.py](../code/chapter11/06_complete_pipeline.py)
+- [07_model_evaluation.py](../code/chapter11/07_model_evaluation.py)
+- [08_distributed_training.py](../code/chapter11/08_distributed_training.py)
+
+## [第十二章 智能体性能评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/第十二章%20智能体性能评估)
+### 12.1 智能体评估基础
+#### 12.1.1 为何需要智能体评估
+#### 12.1.2 主流评估基准概览
+(1) **工具调用能力评估**
+工具调用是智能体的核心能力之一。智能体需要理解用户意图，选择合适的工具，并正确构造函数调用。相关的评估基准包括：
+- **BFCL (Berkeley Function Calling Leaderboard)**：UC Berkeley 推出，包含 1120+测试样本，涵盖 simple、multiple、parallel、irrelevance 四个类别，使用 AST 匹配算法评估，数据集规模适中，社区活跃。
+- **ToolBench**：清华大学推出，包含 16000+真实 API 调用场景，覆盖真实世界的复杂工具使用场景。
+- **API-Bank**：Microsoft Research 推出，包含 53 个常用 API 工具，专注于评估智能体对 API 文档的理解和调用能力。
+
+(2) **通用能力评估**
+评估智能体在真实世界任务中的综合表现，包括多步推理、知识运用、多模态理解等能力：
+- **GAIA (General AI Assistants)**：Meta AI 和 Hugging Face 联合推出，包含 466 个真实世界问题，分为 Level 1/2/3 三个难度级别，评估多步推理、工具使用、文件处理、网页浏览等能力，使用准精确匹配（Quasi Exact Match）算法，任务真实且综合性强。
+- **AgentBench**：清华大学推出，包含 8 个不同领域的任务，全面评估智能体的通用能力。
+- **WebArena**：CMU 推出，评估智能体在真实网页环境中的任务完成能力和网页交互能力。
+
+(3) **多智能体协作评估**
+评估多个智能体协同工作的能力：
+- **ChatEval**：评估多智能体对话系统的质量。
+- **SOTOPIA**：评估智能体在社交场景中的互动能力。
+- **自定义协作场景**：根据具体应用场景设计的评估任务。
+
+(4) **常用评估指标**
+不同基准使用不同的评估指标，常见的包括：
+- **准确性指标**：Accuracy（准确率）、Exact Match（精确匹配）、F1 Score（F1 分数），用于衡量答案的正确性。
+- **效率指标**：Response Time（响应时间）、Token Usage（Token 使用量），用于衡量执行效率。
+- **鲁棒性指标**：Error Rate（错误率）、Failure Recovery（故障恢复），用于衡量容错能力。
+- **协作指标**：Communication Efficiency（通信效率）、Task Completion（任务完成度），用于衡量协作效果。
+
+#### 12.1.3 HelloAgents 评估体系设计
+考虑到学习曲线和实用性，本章将重点介绍以下评估场景：
+- **BFCL**：评估工具调用能力
+- **GAIA**：评估通用 AI 助手能力
+- **数据生成质量评估**：评估 LLM 生成数据质量
+
+![HelloAgents 评估体系架构图](../docs/images/12-figures/12-1.png)
+<center>图 12.1 HelloAgents 评估体系架构图</center>
+
+#### 12.1.4 本章学习目标与快速体验
+```
+hello_agents/
+├── evaluation/                         # 评估模块
+│   └── benchmarks/                     # 评估基准实现
+│       ├── bfcl/                       # BFCL评估实现
+│       │   ├── dataset.py              # BFCL数据集加载器
+│       │   ├── evaluator.py            # BFCL评估器（AST匹配）
+│       │   ├── metrics.py              # BFCL专用指标
+│       │   └── ast_matcher.py          # AST匹配算法
+│       ├── gaia/                       # GAIA评估实现
+│       │   ├── dataset.py              # GAIA数据集加载器
+│       │   ├── evaluator.py            # GAIA评估器（准精确匹配）
+│       │   ├── metrics.py              # GAIA专用指标
+│       │   └── quasi_exact_match.py    # 准精确匹配算法
+│       └── data_generation/            # 数据生成评估实现
+│           ├── dataset.py              # AIME数据集加载器
+│           ├── llm_judge.py            # LLM Judge评估器
+│           └── win_rate.py             # Win Rate评估器
+└── tools/builtin/                      # 内置工具模块
+    ├── bfcl_evaluation_tool.py         # BFCL评估工具
+    ├── gaia_evaluation_tool.py         # GAIA评估工具
+    ├── llm_judge_tool.py               # LLM Judge工具
+    └── win_rate_tool.py                # Win Rate工具
+```
+
+### 12.2 BFCL：工具调用能力评估
+#### 12.2.1 BFCL 基准介绍
+在智能体系统中，工具调用（Tool Calling）是核心能力之一。智能体需要完成以下任务：
+- 理解任务需求：从用户的自然语言描述中提取关键信息
+- 选择合适工具：从可用工具集中选择最适合的工具
+- 构造函数调用：正确填写函数名和参数
+- 处理复杂场景：支持多函数调用、并行调用等高级场景
+
+<center>表 12.1 BFCL 基准中的四个评估类别</center>
+
+| 类别         | 描述                     | 示例 |
+|--------------|--------------------------|------|
+| Simple       | 简单的单函数调用         | “查询今天北京的天气” → `get_weather(city="北京")` |
+| Multiple     | 需要调用多个不同函数     | “查询天气并设置提醒” → `get_weather()` + `set_reminder()` |
+| Parallel     | 需要并行调用多个函数     | “同时查询北京和上海的天气” → 并行调用 `get_weather()` |
+| Irrelevance  | 识别不需要调用函数的情况 | “你好” → 不调用任何函数 |
+
+![BFCL 评估流程图](../docs/images/12-figures/12-2.png)
+<center>图 12.2 BFCL 评估流程图</center>
+
+(1) **BFCL 数据集结构**: JSON格式
+(2) **AST 匹配(Abstract Syntax Tree Matching)说明**
+给定预测的函数调用 $P$ 和标准答案 $G$，AST 匹配函数定义为：
+
+$$
+\text{AST\_Match}(P, G) = \begin{cases}
+1 & \text{if } \text{AST}(P) \equiv \text{AST}(G) \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+(3) **BFCL 评估指标**
+- 准确率 (Accuracy)
+$$
+\text{Accuracy} = \frac{1}{N} \sum_{i=1}^{N} \text{AST\_Match}(P_i, G_i)
+$$
+
+- AST 匹配率 (AST Match Rate)
+- 分类准确率 (Category-wise Accuracy)
+- 加权准确率 (Weighted Accuracy)
+- 错误率 (Error Rate)
+
+(4) **BFCL 官方评估工具**
+
+
+#### 12.2.2 获取 BFCL 数据集
+<center>表 12.2 BFCL 基准中的四个评估类别</center>
+
+| 类别              | 文件名                              | 描述                     | 样本数 |
+|-------------------|-------------------------------------|--------------------------|--------|
+| simple_python     | BFCL_v4_simple_python.json          | 简单 Python 函数调用     | 400    |
+| simple_java       | BFCL_v4_simple_java.json            | 简单 Java 函数调用       | 400    |
+| simple_javascript | BFCL_v4_simple_javascript.json      | 简单 JavaScript 函数调用 | 400    |
+| multiple          | BFCL_v4_multiple.json               | 多函数调用               | 240    |
+| parallel          | BFCL_v4_parallel.json               | 并行函数调用             | 280    |
+| parallel_multiple | BFCL_v4_parallel_multiple.json      | 并行多函数调用           | 200    |
+| irrelevance       | BFCL_v4_irrelevance.json            | 无关检测                 | 200    |
+| live_simple       | BFCL_v4_live_simple.json            | 用户贡献的简单调用       | 150    |
+| multi_turn_base   | BFCL_v4_multi_turn_base.json        | 多轮对话基础             | 100    |
+
+#### 12.2.3 在 HelloAgents 中实现 BFCL 评估
+
+#### 12.2.4 BFCL 官方评估工具集成
+
+![Helloagents 载入 BFCL 评估过程](../docs/images/12-figures/12-3.png)
+<center>图 12.3 Helloagents 载入 BFCL 评估过程</center>
+
+#### 12.2.5 核心组件实现细节
+(1) **BFCLDataset：数据集加载器**
+(2) **BFCLEvaluator：评估执行器**
+(3) **BFCLMetrics：指标计算器**: AST 匹配是 BFCL 评估的核心技术。
+(4) **工具化封装：BFCLEvaluationTool**
+
+#### 12.2.6 扩展与优化建议
+
+### 12.3 GAIA：通用 AI 助手能力评估
+#### 12.3.1 GAIA 基准介绍
+GAIA 的设计理念是：真实世界的问题往往需要多种能力的综合运用。包括:
+- **多步推理**：将复杂问题分解为多个子问题
+- **知识运用**：利用内置知识和外部知识库
+- **多模态理解**：处理文本、图片、文件等多种输入
+- **网页浏览**：从互联网获取最新信息
+- **文件操作**：读取和处理各种格式的文件
+
+(1) **GAIA 数据集结构**
+<center>表 12.3 GAIA 数据集难度级别分布</center>
+
+| 级别    | 描述     | 推理步骤 | 样本数 | 示例 |
+|---------|----------|----------|--------|------|
+| Level 1 | 简单任务 | 0 步     | 165    | “2023 年诺贝尔物理学奖得主是谁？” |
+| Level 2 | 中等任务 | 1–5 步   | 184    | “比较最近三年 GDP 增长最快的国家” |
+| Level 3 | 困难任务 | 5+ 步    | 117    | “分析某公司财报并预测下季度表现” |
+
+(2) **准精确匹配介绍**
+GAIA 使用 **准精确匹配（Quasi Exact Match）** 评估算法，这是 GAIA 官方定义的评估标准。该算法的核心思想是：**先对答案进行归一化处理，然后进行精确匹配**。
+给定预测答案 $A_{\text{pred}}$ 和标准答案 $A_{\text{true}}$，准精确匹配函数定义为：
+
+$$
+\text{Quasi\_Exact\_Match}(A_{\text{pred}}, A_{\text{true}}) = \begin{cases}
+1 & \text{if } \mathcal{N}(A_{\text{pred}}) = \mathcal{N}(A_{\text{true}}) \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+其中 $\mathcal{N}(\cdot)$ 是归一化函数，根据答案类型应用不同的规则。
+
+(3) **GAIA 评估指标**
+- **精确匹配率 (Exact Match Rate)**
+$$
+\text{Exact Match Rate} = \frac{1}{N} \sum_{i=1}^{N} \text{Quasi\_Exact\_Match}(A_{\text{pred},i}, A_{\text{true},i})
+$$
+
+- **分级准确率 (Level-wise Accuracy)**
+对于每个难度级别 $\ell \in \{1, 2, 3\}$，计算该级别的准确率：
+$$
+\text{Accuracy}_\ell = \frac{1}{|D_\ell|} \sum_{i \in D_\ell} \text{Quasi\_Exact\_Match}(A_{\text{pred},i}, A_{\text{true},i})
+$$
+其中 $D_\ell$ 是难度级别 $\ell$ 的样本集合，$|D_\ell|$ 是该级别的样本数。
+
+- **难度递进下降率 (Difficulty Progression Drop Rate)**
+衡量智能体在难度增加时的性能衰减：
+$$
+\text{Drop Rate}_{\ell \to \ell+1} = \frac{\text{Accuracy}_\ell - \text{Accuracy}_{\ell+1}}{\text{Accuracy}_\ell}
+$$
+  * $\text{Drop Rate}_{1 \to 2}$：从 Level 1 到 Level 2 的下降率
+  * $\text{Drop Rate}_{2 \to 3}$：从 Level 2 到 Level 3 的下降率
+
+- **平均推理步骤数 (Average Reasoning Steps)**
+评估智能体完成任务所需的平均步骤数：
+$$
+\text{Avg Steps} = \frac{1}{N_{\text{correct}}} \sum_{i \in \text{Correct}} \text{steps}_i
+$$
+其中 $N_{\text{correct}}$ 是正确回答的样本数，$\text{steps}_i$ 是第 $i$ 个样本的推理步骤数。
+
+<center>表 12.4 GAIA 数据集难度级别分布</center>
+
+| 样本ID | 级别 | 预测答案        | 标准答案        | 归一化预测   | 归一化标准   | 匹配 |
+|--------|------|-----------------|-----------------|--------------|--------------|------|
+| 1      | 1    | "$1,234"        | "1234"          | "1234"       | "1234"       | ✓    |
+| 2      | 1    | "The Apple"     | "apple"         | "apple"      | "apple"      | ✓    |
+| 3      | 1    | "Paris, London" | "London, Paris" | "london,paris"| "london,paris"| ✓    |
+| 4      | 2    | "100"           | "99"            | "100"        | "99"         | ✗    |
+| 5      | 2    | "hello"         | "Hello"         | "hello"      | "hello"      | ✓    |
+| 6      | 2    | "50%"           | "50"            | "50"         | "50"         | ✓    |
+| 7      | 3    | "wrong"         | "correct"       | "wrong"      | "correct"    | ✗    |
+| 8      | 3    | "test"          | "Test"          | "test"       | "test"       | ✓    |
+| 9      | 3    | "a, b"          | "b, a"          | "a,b"        | "a,b"        | ✓    |
+| 10     | 3    | "fail"          | "pass"          | "fail"       | "pass"       | ✗    |
+
+(4) **GAIA 官方系统提示词**
+
+#### 12.3.2 获取 GAIA 数据集
+
+#### 12.3.3 在 HelloAgents 中实现 GAIA 评估
+
+#### 12.3.4 提交结果到 GAIA 官方排行榜
+
+#### 12.3.5 核心组件实现细节
+(1) GAIADataset：支持多模态的数据加载器
+(2) GAIAEvaluator：实现 GAIA 官方评估算法
+GAIA 的评估使用准精确匹配（Quasi Exact Match）算法，需要特殊的答案归一化和匹配逻辑
+(3) GAIAEvaluationTool：一键评估工具
+
+### 12.4 数据生成质量评估
+
+#### 12.4.1 评估方法概述
+三种互补的评估方法：LLM Judge、Win Rate 和人工打分。
+![数据生成质量评估流程图](../docs/images/12-figures/12-5.png)
+<center>图 12.5 数据生成质量评估流程图</center>
+
+(1) LLM Judge 评估
+
+
+
+### TODO: 例子程序运行问题与排错
+- [01_basic_agent_example.py](../code/chapter12/01_basic_agent_example.py)
+- [02_bfcl_quick_start.py](../code/chapter12/02_bfcl_quick_start.py)
+- [03_bfcl_custom_evaluation.py](../code/chapter12/03_bfcl_custom_evaluation.py)
+- [04_run_bfcl_evaluation.py](../code/chapter12/04_run_bfcl_evaluation.py)
+- [05_gaia_quick_start.py](../code/chapter12/05_gaia_quick_start.py)
+- [06_gaia_best_practices.py](../code/chapter12/06_gaia_best_practices.py)
+- [07_data_generation_complete_flow.py](../code/chapter12/07_data_generation_complete_flow.py)
+- [08_data_generation_llm_judge.py](../code/chapter12/08_data_generation_llm_judge.py)
+- [09_data_generation_win_rate.py](../code/chapter12/09_data_generation_win_rate.py)

@@ -1,6 +1,7 @@
 # version: "3.9"
 
 services:
+### TGI ###
   # DeepSeek-R1-Distill-Qwen-7B > Qwen2.5-Coder-7B-Instruct > Gemma-2-9B-it
   # NOTE: 模型名称区分大小写, Qwen/Qwenxxx, not QWen/Qwenxxx !!!
   # 大多数用户：用 Qwen2.5-Coder-7B-Instruct，体验最好。
@@ -196,8 +197,11 @@ services:
       - "--model-id Qwen/Qwen3-1.7B"
       - "--dtype float16"
       - "--cuda-memory-fraction 0.9"
-      - "--max-input-tokens 28000"
-      - "--max-total-tokens 32000"
+      - "--max-input-tokens 8192"
+      - "--max-total-tokens 10240"
+      - "--max-batch-prefill-tokens 8192"
+      - "--max-batch-total-tokens 10240"
+      - "--max-concurrent-requests 2"
 
   tgi-qwen3-0d6b:
     image: ghcr.io/huggingface/text-generation-inference:latest
@@ -220,13 +224,206 @@ services:
     command:
       - "--model-id Qwen/Qwen3-0.6B"
       - "--dtype float16"
-      - "--cuda-memory-fraction 0.9"
-      - "--max-input-tokens 28000"
-      - "--max-total-tokens 32000"
+      - "--cuda-memory-fraction 0.85"
+      - "--max-input-tokens 8192"
+      - "--max-total-tokens 12288"
+      - "--max-batch-prefill-tokens 8192"
+      - "--max-batch-total-tokens 12288"
+      - "--max-concurrent-requests 2"
 
+  tgi-qwen-0d5b:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["qwen1.5-0.5b"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    networks:
+      tgi:
+        ipv4_address: 172.19.0.2
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command:
+      - "--model-id Qwen/Qwen1.5-0.5B-Chat"
+      - "--dtype float16"
+      - "--cuda-memory-fraction 0.85"
+      - "--max-input-tokens 8192"
+      - "--max-total-tokens 10240"
+      - "--max-batch-prefill-tokens 8192"
+      - "--max-batch-total-tokens 10240"
+      - "--max-concurrent-requests 2"
+
+  tgi-qwen2-3b:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["qwen2-3b"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    networks:
+      tgi:
+        ipv4_address: 172.19.0.2
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      RUST_LOG: "debug"
+    command:
+      - "--model-id Qwen/Qwen2.5-3B-Instruct"
+      - "--dtype float16"
+      - "--cuda-memory-fraction 0.85"
+      - "--max-input-tokens 6144"
+      - "--max-total-tokens 8192"
+      - "--max-batch-prefill-tokens 6144"
+      - "--max-batch-total-tokens 8192"
+      - "--max-concurrent-requests 2"
+
+  tgi-qwen2-1d5b:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    # restart: unless-stopped
+    profiles: ["qwen2-1.5b"]
+    runtime: nvidia
+    ports:
+      - "8080:80"
+    networks:
+      tgi:
+        ipv4_address: 172.19.0.2
+    volumes:
+      - /home/harry/.cache/huggingface:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command:
+      - "--model-id Qwen/Qwen2.5-1.5B-Instruct"
+      - "--dtype float16"
+      - "--cuda-memory-fraction 0.85"
+      - "--max-input-tokens 8192"
+      - "--max-total-tokens 10240"
+      - "--max-batch-prefill-tokens 8192"
+      - "--max-batch-total-tokens 10240"
+      - "--max-concurrent-requests 2"
+
+### Ollama ###
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    profiles:
+      - ollama
+    volumes:
+      - ollama:/root/.ollama
+    environment:
+      # 让模型多驻留一会儿，减少你频繁切模型时的重复加载
+      # 这个变量在 Ollama FAQ 里有说明（默认 5m）
+      OLLAMA_KEEP_ALIVE: "30m"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+### VLLM ###
+# TGI 有点慢, 日志功能只打印参数, 不打印具体的请求和相应内容, 后期官方也以 vLLM 开发为主, 切换至 vLLM
+
+  # v0.8.5 不支持 --enable-log-requests, --enable-log-outputs
+  # latest 不支持当前 CUDA 12.7 版本, 只支持12.9+
+  vllm:
+    image: vllm/vllm-openai:v0.8.5
+    container_name: vllm
+    runtime: nvidia
+    ipc: host
+    profiles: ["vllm"]
+    ports:
+      - "8000:8000"
+    networks:
+      tgi:
+        ipv4_address: 172.19.0.11
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN}
+      VLLM_LOGGING_LEVEL: DEBUG
+      VLLM_LOG_STATS_INTERVAL: "1"
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    command: >
+      --model Qwen/Qwen2.5-3B-Instruct
+      --host 0.0.0.0 --port 8000
+      --gpu-memory-utilization 0.85
+      --max-model-len 8192
+      --max-num-seqs 4
+      --max-log-len 800
+      --uvicorn-log-level debug
+
+### UI ###
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    # restart: always
+    ports:
+      - "3000:8080"
+    networks:
+      tgi:
+        ipv4_address: 172.19.0.6
+    volumes:
+      - open-webui-data:/app/backend/data
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    environment:
+      # (可选) 如果你想在启动时就自动连上 TGI，可以取消下面两行的注释：
+      # - OPENAI_BASE_URL=http://tgi:80/v1
+      # - OPENAI_API_BASE_URL=http://tgi:80/v1
+      - OPENAI_API_BASE_URL=http://vllm:8000/v1
+      # - OPENAI_BASE_URL=http://tgi-proxy:9000/v1
+      - OPENAI_API_KEY=sk-no-key-required
+      - GLOBAL_LOG_LEVEL="DEBUG"
+      
+      # 安全设置 (建议修改为你自己的随机字符串)
+      - WEBUI_SECRET_KEY=secret
+
+  # proxy.py 有bug, 需要调试, 暂时不用!
+  tgi-proxy:
+    image: python:3.11-slim
+    container_name: tgi-proxy
+    profiles: ["disabled"]
+    environment:
+      - UPSTREAM=http://tgi:80      # 指向 tgi 容器
+      - LOG_FULL=0                  # 1=打印全文（不建议）
+      - LOG_SNIPPET=1024            # 每条消息打印前 160 字符
+      - LOG_ENABLED=1
+      - LOG_ONLY_CHAT=1
+      - LOG_FILTER_TAGGING=1
+    volumes:
+      - ./proxy.py:/app/proxy.py:ro
+    working_dir: /app
+    command: >
+      sh -lc "pip -q install fastapi uvicorn httpx &&
+              uvicorn proxy:app --host 0.0.0.0 --port 9000"
+    ports:
+      - "9000:9000"
+    networks:
+      tgi:
+        ipv4_address: 172.19.0.251
+
+  # disable chat-ui & mongo services due to that
+  # chat-ui can't pass temperature etc parameters stably to tgi!
   mongo:
     image: mongo:7
     container_name: chatui-mongo
+    profiles: ["disabled"]
     # restart: unless-stopped
     ports:
       - "27017:27017"
@@ -239,6 +436,7 @@ services:
   chat-ui:
     image: ghcr.io/huggingface/chat-ui-db:latest
     container_name: chat-ui
+    profiles: ["disabled"]
     # restart: unless-stopped
     depends_on:
       - mongo
@@ -247,16 +445,30 @@ services:
     networks:
       tgi:
         ipv4_address: 172.19.0.5
+
     environment:
       MONGODB_URL: "mongodb://mongo:27017"
       # OPENAI_BASE_URL: "http://host.docker.internal:8000/v1"  # vLLM
       # OPENAI_BASE_URL: "http://host.docker.internal:8080/v1"  # TGI
-      OPENAI_BASE_URL: "http://tgi:80/v1"  # TGI
+      OPENAI_BASE_URL: "http://tgi:80/v1"
       OPENAI_API_KEY: "dummy"
+      LOG_LEVEL: debug
       HF_TOKEN: ${HF_TOKEN}
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
       ALLOW_INSECURE_COOKIES: "true"
-      TEST_ENV: "test"
+
+      MODELS: >
+        [
+          {
+            "id": "Qwen/Qwen2.5-3B-Instruct",
+            "parameters": {
+              "temperature": 0.6,
+              "top_p": 0.9,
+              "max_tokens": 512
+            }
+          }
+        ]
+      
     volumes:
       - chatui-data:/data
     # extra_hosts:
@@ -264,8 +476,10 @@ services:
     #   - "host.docker.internal:host-gateway"
 
 volumes:
-  chatui-mongo-data:
-  chatui-data:
+  # chatui-mongo-data:
+  # chatui-data:
+  open-webui-data:
+    driver: local
 
 networks:
   tgi:

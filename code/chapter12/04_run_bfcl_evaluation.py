@@ -219,7 +219,7 @@ def show_results(model_name: str, category: str):
     print("="*60)
     
     # CSV文件
-    csv_file = project_root / "score" / "data_non_live.csv"
+    csv_file = project_root / "chapter12/template_output/score/data_non_live.csv"
     
     if csv_file.exists():
         print(f"\n📊 评估结果汇总:")

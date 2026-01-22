@@ -9,6 +9,9 @@
 
 from hello_agents import SimpleAgent, HelloAgentsLLM
 from hello_agents.tools import SearchTool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # 创建LLM和智能体
 llm = HelloAgentsLLM()

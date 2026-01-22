@@ -32,7 +32,7 @@ evaluator = BFCLEvaluator(
 # 4. 运行评估
 results = evaluator.evaluate(
     agent=agent,
-    max_samples=5  # 只评估5个样本
+    max_samples=50  # 只评估5个样本
 )
 
 # 5. 查看详细结果
@@ -52,9 +52,9 @@ for detail in results['detailed_results']:
     print()
 
 # 7. 导出结果
-evaluator.export_results(
+evaluator.export_to_bfcl_format(
     results,
-    output_file="./evaluation_results/bfcl_custom_result.json"
+    output_path="./evaluation_results/bfcl_custom_result.json"
 )
 
 print("✅ 结果已导出到 ./evaluation_results/bfcl_custom_result.json")
